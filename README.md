@@ -7,7 +7,7 @@
 
 ```
 + 0.0.1 : Первый релиз.
-0.1.0 : Добавить службу systemd.
++ 0.1.0 : Добавить службу systemd.
 0.2.0 : Добавить ansible роль. (Будет в отдельном репозитории)
 ...
 ? : Уменьшить исполняемый файл максимально насколько возможно. Сейчас (0.0.1) он весит 7 мегабайт, что много.
@@ -27,23 +27,26 @@ $ make build
 
 Выходной файл - metr1c
 
-## Как использовать?
+## Как установить?
+На сервере должен работать 1С ras (systemctl link /path/to/1c/ras-...).
 
-На сервере должен работать 1С ras (systemctl link /path/to/1c/ras-...). В env запущенного metr1c нужно добавить следующие переменные:
+### Ручная установка
+Скопировать metr1c.tar.gz на сервер.
 ```
-platform1c_admin_cluster : uuid кластера
-platform1c_admin_user    : Имя админа кластера
-platform1c_admin_pw      : Пароль админа кластера
-platform1c_version       : Версия платформы 1С
-```
-Сделать это можно в bash через export:
-```
-$ export platform1c_admin_user=Администратор
-...
-```
+# tar -zxvf ./metr1c.tar.gz
+# rm ./metr1c.tar.gz
+# mkdir /opt/metr1c
+# mv ./metr1c /opt/metr1c/metr1c
+# mv metr1c.service /etc/systemd/system/
+# chown root:root /etc/systemd/system/metr1c.service
+# chmod 770 /etc/systemd/system/metr1c.service
+# nano /etc/systemd/system/metr1c.service # Указать переменные. Можно использовать не nano
 
+# systemctl start metr1c
+```
+# Как использовать?
 
-Информацию выдаёт на порт :1599 в /metric. Службы systemd пока нет.
+Информацию выдаёт на порт :1599 в /metric. Имя службы - metr1c.service
 
 ## Безопасность
 

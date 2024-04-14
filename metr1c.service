@@ -1,0 +1,33 @@
+[Unit]
+Description=Metric collector (Prometheus) for 1C Plaform using 1C RAS/RAC
+Requires=network.target
+
+[Service]
+# UUID кластера 1С. Например, 07593cfe-64c2-4656-be5f-61c3226286d5
+Environment=platform1c_admin_cluster=
+
+# Имя админа кластера. Например, Администратор
+Environment=platform1c_admin_user=
+
+# Пароль админа кластера. Например, 1234
+Environment=platform1c_admin_pw=
+
+# Версия платформы 1С. Например, 8.3.24.1467
+Environment=platform1c_version=
+
+# Порт metr1c. По-умолчанию 1599
+Environment=metr1c_port=1599
+
+
+# User=usr1cv8
+# Group=grp1cv8
+Type=simple
+
+ExecStart=/opt/metr1c/metr1c
+
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
+

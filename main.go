@@ -19,12 +19,13 @@
 package main
 
 import (
-    // "fmt"
+    "fmt"
     "os"
     "os/exec"
-    "strings"
+    //"strings"
     "log"
     "time"
+    "regexp"
     "net/http"
 
     "github.com/prometheus/client_golang/prometheus"
@@ -53,32 +54,41 @@ func recordMetrics() {
     // Путь до исполняемого файла
 
     go func() {
-	for{
-	    out, err := exec.Command(progrun, args...).Output()
+        for{
+            // ! Вывод из rac session list
+            out, err := exec.Command(progrun, args...).Output()
             if err != nil {
                 log.Fatal(err)
             }
 
-            licensesUsed.Set(float64(strings.Count(string(out), "session-id")))
-	    // TODO: более правильный подсчёт количества вхождений. Потенциально
-	    // вхождение "session-id" может быть в другом поле. Поправить при
-	    // создании более мощного парсера.
+            // Количество сессий
+            re := regexp.MustCompile(`session-id *:.\d+\n`)
+            sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
+
+
+            // Таймер
             time.Sleep(60 * time.Second) // 1 min
-	}
+        }
     }()
 }
 
 var (
-    licensesUsed = promauto.NewGauge(prometheus.GaugeOpts{
-        Name: "platform1c_used_licenses",
+    sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
+        Name: "platform1c_sessions_count",
         Help: "The total number of 1c user licenses",
     })
 )
 
 func main() {
-        recordMetrics()
+    if len(os.Args) > 1 && os.Args[1] == "-h" {
+        fmt.Printf("v0.1.0\n")
+        os.Exit(0)
+    }
 
-        http.Handle("/metrics", promhttp.Handler())
-        http.ListenAndServe(":1599", nil)
-	// Использую порт как 1c (i.e. 1545, 1540, 1541, 1560-1591)
+    recordMetrics()
+
+    http.Handle("/metrics", promhttp.Handler())
+    port := ":" + os.Getenv("metr1c_port") // Например 1599
+    http.ListenAndServe(port, nil)
+    // Использую порт как 1c (i.e. 1545, 1540, 1541, 1560-1591)
 }
