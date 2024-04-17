@@ -12,5 +12,5 @@ jobs:
       - uses: alex-page/github-project-automation-plus@v0.9.0
         with:
           project: metr1c
-          column: Backlog
+          column: '🗃️ Backlog'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
