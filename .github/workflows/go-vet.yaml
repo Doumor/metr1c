@@ -11,7 +11,7 @@ on:
         - dev
 
 jobs:
-  staticcheck:
+  vet:
     name: "staticcheck"
     runs-on: ubuntu-latest
 
