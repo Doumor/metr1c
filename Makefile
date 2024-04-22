@@ -4,11 +4,10 @@ build :
 	rm metr1c
 clean :
 	rm metr1c.tar.gz
-install :
+install : build
 	tar -zxvf ./metr1c.tar.gz
 	rm ./metr1c.tar.gz
-	mkdir /opt/metr1c
-	mv ./metr1c /opt/metr1c/metr1c
-	mv -n metr1c.service /etc/systemd/system/
-	chown root:root /etc/systemd/system/metr1c.service
-	chmod 750 /etc/systemd/system/metr1c.service
+	mkdir -p /opt/metr1c
+	install -m 755 ./metr1c /opt/metr1c/metr1c
+	/usr/bin/install -b -s -S .bak -m 750 -o root -g root ./metr1c.service /etc/systemd/system/
+	echo "Now open the /etc/systemd/system/metr1c.service file and edit varriables"
