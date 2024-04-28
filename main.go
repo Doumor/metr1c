@@ -35,7 +35,7 @@ import (
 
 func recordMetrics() {
     //См. пояснения в rac
-	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
+    cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
     // 07593cfe-64c2-4656-be5f-61c3226286d5
 
     // Если админа нет, то создайте, это не очень безопасно.
@@ -89,8 +89,8 @@ func main() {
     http.Handle("/metrics", promhttp.Handler())
     port := ":" + os.Getenv("metr1c_port") // Например 1599
     // Использую порт как 1c (i.e. 1545, 1540, 1541, 1560-1591)
-	err := http.ListenAndServe(port, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+    err := http.ListenAndServe(port, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
 }
