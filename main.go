@@ -54,7 +54,7 @@ func recordMetrics() {
     // Путь до исполняемого файла
 
     go func() {
-		for {
+	for {
             // ! Вывод из rac session list
             out, err := exec.Command(progrun, args...).Output()
             if err != nil {
