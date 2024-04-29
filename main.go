@@ -19,6 +19,7 @@
 package main
 
 import (
+    "flag"
     "fmt"
     "os"
     "os/exec"
@@ -80,7 +81,19 @@ var (
 )
 
 func main() {
-    if len(os.Args) > 1 && os.Args[1] == "-h" {
+    var help bool
+    var version bool
+
+    flag.BoolVar(&help, "help", false, "display help")
+    flag.BoolVar(&version, "version", false, "display version")
+    flag.Parse()
+
+    if help {
+	fmt.Printf("metr1c - prometheus exporter for platform 1C\n")
+	os.Exit(0)
+    }
+
+    if version {
         fmt.Printf("v0.1.0\n")
         os.Exit(0)
     }
