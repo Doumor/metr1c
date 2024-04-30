@@ -37,9 +37,9 @@ $ make build
 # rm ./metr1c.tar.gz
 # mkdir /opt/metr1c
 # mv ./metr1c /opt/metr1c/metr1c
-# mv metr1c.service /etc/systemd/system/
-# chown root:root /etc/systemd/system/metr1c.service
-# chmod 750 /etc/systemd/system/metr1c.service
+# mv metr1c.service /etc/systemd/user/
+# chown root:root /etc/systemd/user/metr1c.service
+# chmod 750 /etc/systemd/user/metr1c.service
 # nano /etc/systemd/user/metr1c.service # Указать переменные. Можно использовать не nano
 
 # systemctl start metr1c
