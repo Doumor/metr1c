@@ -40,7 +40,7 @@ $ make build
 # mv metr1c.service /etc/systemd/system/
 # chown root:root /etc/systemd/system/metr1c.service
 # chmod 750 /etc/systemd/system/metr1c.service
-# nano /etc/systemd/system/metr1c.service # Указать переменные. Можно использовать не nano
+# nano /etc/systemd/user/metr1c.service # Указать переменные. Можно использовать не nano
 
 # systemctl start metr1c
 ```
