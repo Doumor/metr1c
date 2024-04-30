@@ -21,52 +21,61 @@ package main
 import (
     "flag"
     "fmt"
+    "log"
+    "net/http"
     "os"
     "os/exec"
-    //"strings"
-    "log"
-    "time"
     "regexp"
-    "net/http"
+    "time"
 
+
+    // prometheus exporter
     "github.com/prometheus/client_golang/prometheus"
     "github.com/prometheus/client_golang/prometheus/promauto"
     "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func recordMetrics() {
-    //См. пояснения в rac
-    cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
+    // see in "rac" help
+    cluster := "--cluster="+ os.Getenv("platform1c_admin_cluster")
+
     // 07593cfe-64c2-4656-be5f-61c3226286d5
 
-    // Если админа нет, то создайте, это не очень безопасно.
+    // There are configurations without an administrator, but
+    // this is insecure and metr1c only works with configurations
+    // that have an administrator.
     adminusr := "--cluster-user=" + os.Getenv("platform1c_admin_user")
-    // Администратор
+    // Examples: Администратор, Admin
 
     adminpass := "--cluster-pwd=" + os.Getenv("platform1c_admin_pw")
-    // 1234
+    // Examples: 1234, superpass, orsomethingsecure
 
-    args := []string{"session", "list", cluster, adminusr, adminpass}
-    // hidepid=1 иначе другие пользователи на сервере могут через htop увидеть
-    // пользователя и пароль кластера 1С.
-
+    // Path to executable file
     progrun := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
-    // 8.3.24.1467
-    // Путь до исполняемого файла
+    // Examples: 8.3.24.1467
 
+
+
+    sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
+    // hidepid (Linux) must be equal 1 or it's unsecure.
+    // rac accepts password and admin user as argument so any server user
+    // may see it on htop if hidepid equals 0.
+
+    // getting and parsing rac session list output
     go func() {
-	for {
-            // ! Вывод из rac session list
-            out, err := exec.Command(progrun, args...).Output()
+        for{
+            // ! Output from rac session list
+            out, err := exec.Command(progrun, sessionListArgs...).Output()
+
             if err != nil {
                 log.Fatal(err)
             }
 
-            // Количество сессий
+            // Session count
             re := regexp.MustCompile(`session-id *:.\d+\n`)
             sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
 
-            // Таймер
+            // Timer
             time.Sleep(60 * time.Second) // 1 min
         }
     }()
@@ -100,8 +109,11 @@ func main() {
     recordMetrics()
 
     http.Handle("/metrics", promhttp.Handler())
-    port := ":" + os.Getenv("metr1c_port") // Например 1599
-    // Использую порт как 1c (i.e. 1545, 1540, 1541, 1560-1591)
+
+    port := ":" + os.Getenv("metr1c_port") // Example: 1599
+    http.ListenAndServe(port, nil)
+    // We use port like other 1C products (i.e. 1545, 1540, 1541, 1560-1591)
+
     err := http.ListenAndServe(port, nil)
     if err != nil {
         log.Fatal(err)
