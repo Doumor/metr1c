@@ -35,7 +35,7 @@ import (
 
 func recordMetrics() {
     //См. пояснения в rac
-    cluster := "--cluster="+ os.Getenv("platform1c_admin_cluster")
+    cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
     // 07593cfe-64c2-4656-be5f-61c3226286d5
 
     // Если админа нет, то создайте, это не очень безопасно.
@@ -54,7 +54,7 @@ func recordMetrics() {
     // Путь до исполняемого файла
 
     go func() {
-        for{
+	for {
             // ! Вывод из rac session list
             out, err := exec.Command(progrun, args...).Output()
             if err != nil {
@@ -64,7 +64,6 @@ func recordMetrics() {
             // Количество сессий
             re := regexp.MustCompile(`session-id *:.\d+\n`)
             sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
-
 
             // Таймер
             time.Sleep(60 * time.Second) // 1 min
@@ -89,6 +88,9 @@ func main() {
 
     http.Handle("/metrics", promhttp.Handler())
     port := ":" + os.Getenv("metr1c_port") // Например 1599
-    http.ListenAndServe(port, nil)
     // Использую порт как 1c (i.e. 1545, 1540, 1541, 1560-1591)
+    err := http.ListenAndServe(port, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
 }
