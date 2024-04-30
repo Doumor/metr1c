@@ -4,7 +4,7 @@ build_dev :
 build :
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags="-s -w" .
 
-tar :
+tar : build
 	tar -v -czf metr1c.tar.gz metr1c metr1c.service
 	rm -v metr1c
 
