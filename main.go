@@ -19,6 +19,7 @@
 package main
 
 import (
+    "flag"
     "fmt"
     "log"
     "net/http"
@@ -37,6 +38,7 @@ import (
 func recordMetrics() {
     // see in "rac" help
     cluster := "--cluster="+ os.Getenv("platform1c_admin_cluster")
+
     // 07593cfe-64c2-4656-be5f-61c3226286d5
 
     // There are configurations without an administrator, but
@@ -64,6 +66,7 @@ func recordMetrics() {
         for{
             // ! Output from rac session list
             out, err := exec.Command(progrun, sessionListArgs...).Output()
+
             if err != nil {
                 log.Fatal(err)
             }
@@ -71,7 +74,6 @@ func recordMetrics() {
             // Session count
             re := regexp.MustCompile(`session-id *:.\d+\n`)
             sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
-
 
             // Timer
             time.Sleep(60 * time.Second) // 1 min
@@ -87,7 +89,19 @@ var (
 )
 
 func main() {
-    if len(os.Args) > 1 && os.Args[1] == "-h" {
+    var help bool
+    var version bool
+
+    flag.BoolVar(&help, "help", false, "display help")
+    flag.BoolVar(&version, "version", false, "display version")
+    flag.Parse()
+
+    if help {
+	fmt.Printf("metr1c - prometheus exporter for platform 1C\n")
+	os.Exit(0)
+    }
+
+    if version {
         fmt.Printf("v0.1.0\n")
         os.Exit(0)
     }
@@ -95,7 +109,13 @@ func main() {
     recordMetrics()
 
     http.Handle("/metrics", promhttp.Handler())
+
     port := ":" + os.Getenv("metr1c_port") // Example: 1599
     http.ListenAndServe(port, nil)
     // We use port like other 1C products (i.e. 1545, 1540, 1541, 1560-1591)
+
+    err := http.ListenAndServe(port, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
 }
