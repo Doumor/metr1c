@@ -55,14 +55,14 @@ func recordMetrics() {
 
 
     sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
-    // hidepid (Linux) must be equals 1 or it's unsecure.
+    // hidepid (Linux) must be equal 1 or it's unsecure.
     // rac accepts password and admin user as argument so any server user
     // may see it on htop if hidepid equals 0.
 
     // getting and parsing rac session list output
     go func() {
         for{
-            // ! Output form rac session list
+            // ! Output from rac session list
             out, err := exec.Command(progrun, sessionListArgs...).Output()
             if err != nil {
                 log.Fatal(err)
