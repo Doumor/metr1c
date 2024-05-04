@@ -75,6 +75,9 @@ func recordMetrics() {
 				log.Fatal(err)
 			}
 			err = sessions.Parse()
+            if err != nil {
+                log.Fatal(err)
+            }
 
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
