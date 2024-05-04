@@ -1,3 +1,7 @@
+/*
+	rac implements types and methods for running queries with the `rac` tool,
+	as well as parsing its output.
+*/
 package rac
 
 import (
@@ -5,12 +9,14 @@ import (
 	"strings"
 )
 
+// ErrNoColonInRACLine is returned when colon delimiter is found in a `rac` output line
 type ErrNoColonInRACLine struct{}
 
 func (e *ErrNoColonInRACLine) Error() string {
 	return "error: no colon in a RAC output line"
 }
 
+// ErrNoKeyInRACLine is returned when a `rac` output line somehow has nothing or only whitespaces before the first colon
 type ErrNoKeyInRACLine struct{}
 
 func (e *ErrNoKeyInRACLine) Error() string {
@@ -36,12 +42,14 @@ func extractKeyValue(line string) (string, string, error) {
 	return key, value, nil
 }
 
+// RACQuery queries the `rac` tool and parses the output
 type RACQuery struct {
 	Name    string
 	Output  string
 	Records []map[string]string
 }
 
+// Parse converts `rac` output lines into a slice of map[string]string records
 func (q *RACQuery) Parse() error {
 	blocks := strings.Split(q.Output, "\n\n")
 	fmt.Println(blocks)
@@ -63,6 +71,7 @@ func (q *RACQuery) Parse() error {
 	return nil
 }
 
+// CountRecords returns the number of records in the `rac` query
 func (q *RACQuery) CountRecords() int {
 	return len(q.Records)
 }
