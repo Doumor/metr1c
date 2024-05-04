@@ -62,3 +62,7 @@ func (q *RACQuery) Parse() error {
 
 	return nil
 }
+
+func (q *RACQuery) CountRecords() int {
+	return len(q.Records)
+}
