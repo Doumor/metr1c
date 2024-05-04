@@ -25,8 +25,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"regexp"
 	"time"
+
+	"doumor/metr1c/rac"
 
 	// prometheus exporter
 	"github.com/prometheus/client_golang/prometheus"
@@ -58,21 +59,20 @@ func recordMetrics() {
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
-	// getting and parsing rac session list output
 	go func() {
 		for {
-			// ! Output from rac session list
-			out, err := exec.Command(progrun, sessionListArgs...).Output()
-
+			// Get output from a rac session list query
+			output, err := exec.Command(progrun, sessionListArgs...).Output()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			// Session count
-			re := regexp.MustCompile(`session-id *:.\d+\n`)
-			sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
+			// Count current 1C sessions
+			sessions := rac.RACQuery{Output: string(output)}
+			err = sessions.Parse()
+			sessionCount.Set(float64(sessions.CountRecords()))
 
-			// Timer
+			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
 		}
 	}()
