@@ -1,11 +1,12 @@
 /*
-	rac implements types and methods for running queries with the `rac` tool,
-	as well as parsing its output.
+rac implements types and methods for running queries with the `rac` tool,
+as well as parsing its output.
 */
 package rac
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 )
 
@@ -44,9 +45,25 @@ func extractKeyValue(line string) (string, string, error) {
 
 // RACQuery queries the `rac` tool and parses the output
 type RACQuery struct {
-	Name    string
-	Output  string
-	Records []map[string]string
+	ExecPath   string
+	Command    string
+	SubCommand string
+	Cluster    string
+	User       string
+	Password   string
+	Output     string
+	Records    []map[string]string
+}
+
+// Run a query against the `rac` tool
+func (q *RACQuery) Run() error {
+	output, err := exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Cluster, q.User, q.Password).Output()
+	if err != nil {
+		return fmt.Errorf("error running a '%s %s' command: %w", q.Command, q.SubCommand, err)
+	}
+	q.Output = string(output)
+
+	return nil
 }
 
 // Parse converts `rac` output lines into a slice of map[string]string records

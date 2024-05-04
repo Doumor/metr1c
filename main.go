@@ -24,7 +24,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"time"
 
 	"doumor/metr1c/rac"
@@ -50,25 +49,35 @@ func recordMetrics() {
 	adminpass := "--cluster-pwd=" + os.Getenv("platform1c_admin_pw")
 	// Examples: 1234, superpass, orsomethingsecure
 
-	// Path to executable file
-	progrun := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
+	// Path to the executable file
+	execPath := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
 	// Examples: 8.3.24.1467
 
-	sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
+	// sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
 	// hidepid (Linux) must be equal 1 or it's unsecure.
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
 	go func() {
 		for {
+			// Examine current 1C session info
+			sessions := rac.RACQuery{
+				ExecPath:   execPath,
+				Command:    "session",
+				SubCommand: "list",
+				Cluster:    cluster,
+				User:       adminusr,
+				Password:   adminpass,
+			}
 			// Get output from a rac session list query
-			output, err := exec.Command(progrun, sessionListArgs...).Output()
+			err := sessions.Run()
+			// output, err := exec.Command(progrun, sessionListArgs...).Output()
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			// Count current 1C sessions
-			sessions := rac.RACQuery{Output: string(output)}
+			// sessions := rac.RACQuery{Output: string(output)}
 			err = sessions.Parse()
 			sessionCount.Set(float64(sessions.CountRecords()))
 
