@@ -1,7 +1,7 @@
 package rac
 
 import (
-	// "fmt"
+	"fmt"
 	"strings"
 )
 
@@ -22,7 +22,7 @@ func extractKeyValue(line string) (string, string, error) {
 		return "", "", &ErrNoColonInRACLine{}
 	}
 
-	data := strings.Split(line, ":")
+	data := strings.SplitN(line, ":", 2)
 	key := strings.TrimSpace(data[0])
 	value := strings.TrimSpace(data[1])
 
@@ -36,3 +36,24 @@ func extractKeyValue(line string) (string, string, error) {
 	return key, value, nil
 }
 
+func Parse(output string) ([]map[string]string, error) {
+	var records []map[string]string
+	blocks := strings.Split(output, "\n\n")
+	fmt.Println(blocks)
+
+	for _, block := range blocks {
+		record := map[string]string{}
+
+		for idx, line := range strings.Split(block, "\n") {
+			key, value, err := extractKeyValue(line)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing rac output (line %d): %w", idx, err)
+			}
+			record[key] = value
+		}
+
+		records = append(records, record)
+	}
+
+	return records, nil
+}

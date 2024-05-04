@@ -36,6 +36,21 @@ func TestExtractKeyValueQuotes(t *testing.T) {
 	}
 }
 
+func TestExtractKeyValueColonsInValue(t *testing.T) {
+	input := `connected-at   : 2024-04-06T22:00:03`
+	expectedKey := "connected-at"
+	expectedValue := "2024-04-06T22:00:03"
+
+	actualKey, actualValue, err := extractKeyValue(input)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if expectedKey != actualKey || expectedValue != actualValue {
+		t.Fatalf("(actual) %#v: %#v != %#v: %#v (expected)\n", actualKey, actualValue, expectedKey, expectedValue)
+	}
+}
+
 func TestExtractKeyValueNoColon(t *testing.T) {
 	input := `application      "WebServerExtension"`
 
@@ -54,3 +69,69 @@ func TestExtractKeyValueNoKey(t *testing.T) {
 	}
 }
 
+func TestParseSingleBlock(t *testing.T) {
+	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
+	conn-id        : 1168
+	application    : "WebServerExtension"
+	connected-at   : 2024-04-06T22:00:03
+	blocked-by-ls  : 0`
+
+	expected := []map[string]string{
+		{
+			"connection":    "3f97c035-b8e6-4b25-a72c-887b51a72b67",
+			"conn-id":       "1168",
+			"application":   "WebServerExtension",
+			"connected-at":  "2024-04-06T22:00:03",
+			"blocked-by-ls": "0",
+		},
+	}
+
+	actual, err := Parse(input)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("(actual) %#v != %#v (expected)\n", actual, expected)
+	}
+}
+
+func TestParseMultipleBlocks(t *testing.T) {
+	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
+	conn-id        : 1168
+	application    : "WebServerExtension"
+	connected-at   : 2024-04-06T22:00:03
+	blocked-by-ls  : 0
+
+	connection     : 5f3777f8-75a2-4b6e-a9da-7d24cac4bb21
+	conn-id        : 678
+	application    : "WebServerDoodad"
+	connected-at   : 2024-05-04T21:26:01
+	blocked-by-ls  : 1`
+
+	expected := []map[string]string{
+		{
+			"connection":    "3f97c035-b8e6-4b25-a72c-887b51a72b67",
+			"conn-id":       "1168",
+			"application":   "WebServerExtension",
+			"connected-at":  "2024-04-06T22:00:03",
+			"blocked-by-ls": "0",
+		},
+		{
+			"connection":    "5f3777f8-75a2-4b6e-a9da-7d24cac4bb21",
+			"conn-id":       "678",
+			"application":   "WebServerDoodad",
+			"connected-at":  "2024-05-04T21:26:01",
+			"blocked-by-ls": "1",
+		},
+	}
+
+	actual, err := Parse(input)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("(actual) %#v != %#v (expected)\n", actual, expected)
+	}
+}
