@@ -36,9 +36,14 @@ func extractKeyValue(line string) (string, string, error) {
 	return key, value, nil
 }
 
-func Parse(output string) ([]map[string]string, error) {
-	var records []map[string]string
-	blocks := strings.Split(output, "\n\n")
+type RACQuery struct {
+	Name    string
+	Output  string
+	Records []map[string]string
+}
+
+func (q *RACQuery) Parse() error {
+	blocks := strings.Split(q.Output, "\n\n")
 	fmt.Println(blocks)
 
 	for _, block := range blocks {
@@ -47,13 +52,13 @@ func Parse(output string) ([]map[string]string, error) {
 		for idx, line := range strings.Split(block, "\n") {
 			key, value, err := extractKeyValue(line)
 			if err != nil {
-				return nil, fmt.Errorf("error parsing rac output (line %d): %w", idx, err)
+				return fmt.Errorf("error parsing rac output (line %d): %w", idx, err)
 			}
 			record[key] = value
 		}
 
-		records = append(records, record)
+		q.Records = append(q.Records, record)
 	}
 
-	return records, nil
+	return nil
 }
