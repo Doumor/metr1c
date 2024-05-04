@@ -71,14 +71,12 @@ func recordMetrics() {
 			}
 			// Get output from a rac session list query
 			err := sessions.Run()
-			// output, err := exec.Command(progrun, sessionListArgs...).Output()
 			if err != nil {
 				log.Fatal(err)
 			}
+			err = sessions.Parse()
 
 			// Count current 1C sessions
-			// sessions := rac.RACQuery{Output: string(output)}
-			err = sessions.Parse()
 			sessionCount.Set(float64(sessions.CountRecords()))
 
 			// Set a timeout before the next metrics gathering
