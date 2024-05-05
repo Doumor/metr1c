@@ -75,6 +75,14 @@ func recordMetrics() {
             re := regexp.MustCompile(`session-id *:.\d+\n`)
             sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
 
+			out_connection, err := exec.Command(progrun, sessionListArgs...).Output()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			re_conn := regexp.MustCompile(`conn-id *:.\d+\n`)
+			connectionCount.Set(float64(len(re_conn.FindAllString(string(out_connection), -1))))
+
             // Timer
             time.Sleep(60 * time.Second) // 1 min
         }
@@ -86,6 +94,11 @@ var (
         Name: "platform1c_sessions_count",
         Help: "The total number of 1c user licenses",
     })
+
+	connectionCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_connection_count",
+		Help: "The total number of connections",
+	})
 )
 
 func main() {
