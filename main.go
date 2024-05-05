@@ -57,6 +57,7 @@ func recordMetrics() {
 
 
     sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
+	connectionListArgs := []string{"connection", "list", cluster, adminusr, adminpass}
     // hidepid (Linux) must be equal 1 or it's unsecure.
     // rac accepts password and admin user as argument so any server user
     // may see it on htop if hidepid equals 0.
@@ -75,13 +76,13 @@ func recordMetrics() {
             re := regexp.MustCompile(`session-id *:.\d+\n`)
             sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
 
-			out_connection, err := exec.Command(progrun, sessionListArgs...).Output()
+			out_connection, err := exec.Command(progrun, connectionListArgs...).Output()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			re_conn := regexp.MustCompile(`conn-id *:.\d+\n`)
-			connectionCount.Set(float64(len(re_conn.FindAllString(string(out_connection), -1))))
+			reConn := regexp.MustCompile(`conn-id *:.\d+\n`)
+			connectionCount.Set(float64(len(reConn.FindAllString(string(out_connection), -1))))
 
             // Timer
             time.Sleep(60 * time.Second) // 1 min
