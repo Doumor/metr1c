@@ -110,7 +110,7 @@ func main() {
 	// We use port like other 1C products (i.e. 1545, 1540, 1541, 1560-1591)
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
 
-	err := http.ListenAndServe(port, nil)
+	err := http.ListenAndServe(port, nil) // #nosec G114
 	if err != nil {
 		log.Fatal(err)
 	}
