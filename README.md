@@ -5,7 +5,7 @@
 
 ## Roadmap
 
-```
+```markdown
 + 0.0.1 : Первый релиз.
 + 0.1.0 : Добавить службу systemd.
 0.2.0 : Добавить ansible роль. (Будет в отдельном репозитории)
@@ -50,9 +50,9 @@ systemctl start metr1c
 ```
 
 ### Установка из исходников
-```
-# make install
-# make clean
+```shell
+make install
+make clean
 ```
 
 # Как использовать?
