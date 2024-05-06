@@ -10,6 +10,9 @@ on:
         - master
         - development
 
+permissions:
+  contents: read
+
 jobs:
   staticcheck:
     name: "staticcheck"
