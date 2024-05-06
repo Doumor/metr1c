@@ -19,15 +19,15 @@
 package main
 
 import (
-    "flag"
-    "fmt"
-    "log"
-    "net/http"
-    "os"
-    "os/exec"
-    "regexp"
-    "time"
-
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/exec"
+	"regexp"
+	"strconv"
+	"time"
 
     // prometheus exporter
     "github.com/prometheus/client_golang/prometheus"
@@ -94,7 +94,16 @@ func recordMetrics() {
 			}
 
 			reProc := regexp.MustCompile(`memory-size *:.\d+\n`)
-			allProcMem := re.FindAllString(string(outProc), -1)
+			allProcMem := reProc.FindAllString(string(outProc), -1)
+			reMemProcVal := regexp.MustCompile(`\d+`)
+			matchesProcMem := findMatchingStrings(reMemProcVal, allProcMem)
+			for _, match := range matchesProcMem {
+				memVal, err := strconv.Atoi(match)
+				if err != nil {
+					log.Fatal(err)
+				}
+				totalProcMem.Add(float64(memVal))
+			}
 
             // Timer
             time.Sleep(60 * time.Second) // 1 min
