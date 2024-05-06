@@ -35,6 +35,16 @@ import (
     "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+func findMatchingStrings(regex *regexp.Regexp, data []string) []string {
+	var matches []string
+	for _, str := range data {
+		if match := regex.FindString(str); match != "" {
+			matches = append(matches, match)
+		}
+	}
+	return matches
+}
+
 func recordMetrics() {
     // see in "rac" help
     cluster := "--cluster="+ os.Getenv("platform1c_admin_cluster")
