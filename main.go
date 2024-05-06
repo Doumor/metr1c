@@ -89,6 +89,10 @@ func main() {
 
     http.Handle("/metrics", promhttp.Handler())
     port := ":" + os.Getenv("metr1c_port") // Например 1599
-    http.ListenAndServe(port, nil)
+  
+    err := http.ListenAndServe(port, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
     // Использую порт как 1c (i.e. 1545, 1540, 1541, 1560-1591)
 }
