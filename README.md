@@ -31,6 +31,7 @@ make build
 На сервере должен работать 1С ras (systemctl link /path/to/1c/ras-...).
 
 ### Ручная установка
+
 Скопировать `metr1c.tar.gz` на сервер.
 
 Далее с правами `root` выполнить:
@@ -47,6 +48,13 @@ nano /etc/systemd/system/metr1c.service # Указать переменные
 
 systemctl start metr1c
 ```
+
+### Установка из исходников
+```
+# make install
+# make clean
+```
+
 # Как использовать?
 
 Информацию выдаёт на порт `:1599` по эндпоинту `/metric`. Имя службы: `metr1c.service`.
