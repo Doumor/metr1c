@@ -57,7 +57,7 @@ func recordMetrics() {
 
 
     sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
-	processListArgs := []string{"process", "list", cluster, adminusr, adminpass}
+    processListArgs := []string{"process", "list", cluster, adminusr, adminpass}
 
     // hidepid (Linux) must be equal 1 or it's unsecure.
     // rac accepts password and admin user as argument so any server user
@@ -77,13 +77,13 @@ func recordMetrics() {
             re := regexp.MustCompile(`session-id *:.\d+\n`)
             sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
 
-			outProcess, err := exec.Command(progrun, processListArgs...).Output()
-			if err != nil {
-				log.Fatal(err)
-			}
+	    outProcess, err := exec.Command(progrun, processListArgs...).Output()
+	    if err != nil {
+		log.Fatal(err)
+	    }
 
-			reProc := regexp.MustCompile(`pid *:.\d+\n`)
-			processCount.Set(float64(len(reProc.FindAllString(string(outProcess), -1))))
+	    reProc := regexp.MustCompile(`pid *:.\d+\n`)
+	    processCount.Set(float64(len(reProc.FindAllString(string(outProcess), -1))))
 
             // Timer
             time.Sleep(60 * time.Second) // 1 min
@@ -97,10 +97,10 @@ var (
         Help: "The total number of 1c user licenses",
     })
 
-	processCount = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "platform1c_process_count",
-		Help: "The total number of processes",
-	})
+    processCount = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "platform1c_process_count",
+	Help: "The total number of processes",
+    })
 )
 
 func main() {
