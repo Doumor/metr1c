@@ -21,38 +21,41 @@
 ```
 
 ## Как собрать?
-```
-$ make build
+```shell
+make build
 ```
 
-Выходной файл - metr1c
+Выходной файл: `metr1c`.
 
 ## Как установить?
 На сервере должен работать 1С ras (systemctl link /path/to/1c/ras-...).
 
 ### Ручная установка
-Скопировать metr1c.tar.gz на сервер.
-```
-# tar -zxvf ./metr1c.tar.gz
-# rm ./metr1c.tar.gz
-# mkdir /opt/metr1c
-# mv ./metr1c /opt/metr1c/metr1c
-# mv metr1c.service /etc/systemd/system/
-# chown root:root /etc/systemd/system/metr1c.service
-# chmod 770 /etc/systemd/system/metr1c.service
-# nano /etc/systemd/system/metr1c.service # Указать переменные. Можно использовать не nano
+Скопировать `metr1c.tar.gz` на сервер.
 
-# systemctl start metr1c
+Далее с правами `root` выполнить:
+
+```shell
+tar -zxvf ./metr1c.tar.gz
+rm ./metr1c.tar.gz
+mkdir /opt/metr1c
+mv ./metr1c /opt/metr1c/metr1c
+mv metr1c.service /etc/systemd/system/
+chown root:root /etc/systemd/system/metr1c.service
+chmod 770 /etc/systemd/system/metr1c.service
+nano /etc/systemd/system/metr1c.service # Указать переменные
+
+systemctl start metr1c
 ```
 # Как использовать?
 
-Информацию выдаёт на порт :1599 в /metric. Имя службы - metr1c.service
+Информацию выдаёт на порт `:1599` по эндпоинту `/metric`. Имя службы: `metr1c.service`.
 
 ## Безопасность
 
-Пароль и имя админа передаются в rac как аргументы и при установленном hidepid=0 другие пользователи на сервере смогут их увидеть. Рекомендуется установить hidepid=1.
+Пароль и имя админа передаются в rac как аргументы. и при установленном `hidepid=0` другие пользователи на сервере смогут их увидеть. Рекомендуется установить `hidepid=1`.
 
 ## Авторство
 Лицензия - GPLv3.
 
-Если интересует совместная разработка или проект в целом, то почта для связи - doumor@vk.com
+Если интересует совместная разработка или проект в целом, то почта для связи - <doumor@vk.com>.
