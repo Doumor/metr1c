@@ -19,76 +19,99 @@
 package main
 
 import (
-    "fmt"
-    "os"
-    "os/exec"
-    //"strings"
-    "log"
-    "time"
-    "regexp"
-    "net/http"
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/exec"
+	"regexp"
+	"time"
 
-    "github.com/prometheus/client_golang/prometheus"
-    "github.com/prometheus/client_golang/prometheus/promauto"
-    "github.com/prometheus/client_golang/prometheus/promhttp"
+	// prometheus exporter
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func recordMetrics() {
-    //См. пояснения в rac
-    cluster := "--cluster="+ os.Getenv("platform1c_admin_cluster")
-    // 07593cfe-64c2-4656-be5f-61c3226286d5
+	// see in "rac" help
+	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
-    // Если админа нет, то создайте, это не очень безопасно.
-    adminusr := "--cluster-user=" + os.Getenv("platform1c_admin_user")
-    // Администратор
+	// 07593cfe-64c2-4656-be5f-61c3226286d5
 
-    adminpass := "--cluster-pwd=" + os.Getenv("platform1c_admin_pw")
-    // 1234
+	// There are configurations without an administrator, but
+	// this is insecure and metr1c only works with configurations
+	// that have an administrator.
+	adminusr := "--cluster-user=" + os.Getenv("platform1c_admin_user")
+	// Examples: Администратор, Admin
 
-    args := []string{"session", "list", cluster, adminusr, adminpass}
-    // hidepid=1 иначе другие пользователи на сервере могут через htop увидеть
-    // пользователя и пароль кластера 1С.
+	adminpass := "--cluster-pwd=" + os.Getenv("platform1c_admin_pw")
+	// Examples: 1234, superpass, orsomethingsecure
 
-    progrun := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
-    // 8.3.24.1467
-    // Путь до исполняемого файла
+	// Path to executable file
+	progrun := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
+	// Examples: 8.3.24.1467
 
-    go func() {
-        for{
-            // ! Вывод из rac session list
-            out, err := exec.Command(progrun, args...).Output()
-            if err != nil {
-                log.Fatal(err)
-            }
+	sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
+	// hidepid (Linux) must be equal 1 or it's unsecure.
+	// rac accepts password and admin user as argument so any server user
+	// may see it on htop if hidepid equals 0.
 
-            // Количество сессий
-            re := regexp.MustCompile(`session-id *:.\d+\n`)
-            sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
+	// getting and parsing rac session list output
+	go func() {
+		for {
+			// ! Output from rac session list
+			out, err := exec.Command(progrun, sessionListArgs...).Output()
 
+			if err != nil {
+				log.Fatal(err)
+			}
 
-            // Таймер
-            time.Sleep(60 * time.Second) // 1 min
-        }
-    }()
+			// Session count
+			re := regexp.MustCompile(`session-id *:.\d+\n`)
+			sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
+
+			// Timer
+			time.Sleep(60 * time.Second) // 1 min
+		}
+	}()
 }
 
 var (
-    sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
-        Name: "platform1c_sessions_count",
-        Help: "The total number of 1c user licenses",
-    })
+	sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_sessions_count",
+		Help: "The total number of 1c user licenses",
+	})
 )
 
 func main() {
-    if len(os.Args) > 1 && os.Args[1] == "-h" {
-        fmt.Printf("v0.1.0\n")
-        os.Exit(0)
-    }
+	var help bool
+	var version bool
 
-    recordMetrics()
+	flag.BoolVar(&help, "help", false, "display help")
+	flag.BoolVar(&version, "version", false, "display version")
+	flag.Parse()
 
-    http.Handle("/metrics", promhttp.Handler())
-    port := ":" + os.Getenv("metr1c_port") // Например 1599
-    http.ListenAndServe(port, nil)
-    // Использую порт как 1c (i.e. 1545, 1540, 1541, 1560-1591)
+	if help {
+		fmt.Printf("metr1c - prometheus exporter for platform 1C\n")
+		os.Exit(0)
+	}
+
+	if version {
+		fmt.Printf("v0.1.0\n")
+		os.Exit(0)
+	}
+
+	recordMetrics()
+
+	http.Handle("/metrics", promhttp.Handler())
+
+	// We use port like other 1C products (i.e. 1545, 1540, 1541, 1560-1591)
+	port := ":" + os.Getenv("metr1c_port") // Example: 1599
+
+	err := http.ListenAndServe(port, nil) // #nosec G114
+	if err != nil {
+		log.Fatal(err)
+	}
 }
