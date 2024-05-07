@@ -64,14 +64,12 @@ func recordMetrics() {
     progrun := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
     // Examples: 8.3.24.1467
 
+    sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
+    processListArgs := []string{"process", "list", cluster, adminusr, adminpass}
 
-
-	sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
-	processListArgs := []string{"process", "list", cluster, adminusr, adminpass}
-
-	// hidepid (Linux) must be equal 1 or it's unsecure.
-	// rac accepts password and admin user as argument so any server user
-	// may see it on htop if hidepid equals 0.
+    // hidepid (Linux) must be equal 1 or it's unsecure.
+    // rac accepts password and admin user as argument so any server user
+    // may see it on htop if hidepid equals 0.
 
     // getting and parsing rac session list output
     go func() {
@@ -83,27 +81,27 @@ func recordMetrics() {
                 log.Fatal(err)
             }
 
-			// Session count
-			re := regexp.MustCompile(`session-id *:.\d+\n`)
-			sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
+	    // Session count
+	    re := regexp.MustCompile(`session-id *:.\d+\n`)
+	    sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
 
-			outProc, err := exec.Command(progrun, processListArgs...).Output()
+	    outProc, err := exec.Command(progrun, processListArgs...).Output()
 
-			if err != nil {
-				log.Fatal(err)
-			}
+	    if err != nil {
+	        log.Fatal(err)
+	    }
 
-			reProc := regexp.MustCompile(`memory-size *:.\d+\n`)
-			allProcMem := reProc.FindAllString(string(outProc), -1)
-			reMemProcVal := regexp.MustCompile(`\d+`)
-			matchesProcMem := findMatchingStrings(reMemProcVal, allProcMem)
-			for _, match := range matchesProcMem {
-				memVal, err := strconv.Atoi(match)
-				if err != nil {
-					log.Fatal(err)
-				}
-				totalProcMem.Add(float64(memVal))
-			}
+	    reProc := regexp.MustCompile(`memory-size *:.\d+\n`)
+	    allProcMem := reProc.FindAllString(string(outProc), -1)
+	    reMemProcVal := regexp.MustCompile(`\d+`)
+	    matchesProcMem := findMatchingStrings(reMemProcVal, allProcMem)
+	    for _, match := range matchesProcMem {
+		memVal, err := strconv.Atoi(match)
+		if err != nil {
+		    log.Fatal(err)
+		}
+		totalProcMem.Add(float64(memVal))
+	    }
 
             // Timer
             time.Sleep(60 * time.Second) // 1 min
