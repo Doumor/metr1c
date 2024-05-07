@@ -24,9 +24,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
-	"regexp"
 	"time"
+
+	"doumor/metr1c/rac"
 
 	// prometheus exporter
 	"github.com/prometheus/client_golang/prometheus"
@@ -49,30 +49,40 @@ func recordMetrics() {
 	adminpass := "--cluster-pwd=" + os.Getenv("platform1c_admin_pw")
 	// Examples: 1234, superpass, orsomethingsecure
 
-	// Path to executable file
-	progrun := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
+	// Path to the executable file
+	execPath := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
 	// Examples: 8.3.24.1467
 
-	sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
 	// hidepid (Linux) must be equal 1 or it's unsecure.
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
-	// getting and parsing rac session list output
+
 	go func() {
 		for {
-			// ! Output from rac session list
-			out, err := exec.Command(progrun, sessionListArgs...).Output()
-
+			// Examine current 1C session info
+			sessions := rac.RACQuery{
+				ExecPath:   execPath,
+				Command:    "session",
+				SubCommand: "list",
+				Cluster:    cluster,
+				User:       adminusr,
+				Password:   adminpass,
+			}
+			// Get output from a rac session list query
+			err := sessions.Run()
 			if err != nil {
 				log.Fatal(err)
 			}
+			err = sessions.Parse()
+            if err != nil {
+                log.Fatal(err)
+            }
 
-			// Session count
-			re := regexp.MustCompile(`session-id *:.\d+\n`)
-			sessionCount.Set(float64(len(re.FindAllString(string(out), -1))))
+			// Count current 1C sessions
+			sessionCount.Set(float64(sessions.CountRecords()))
 
-			// Timer
+			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
 		}
 	}()
@@ -107,7 +117,6 @@ func main() {
 
 	http.Handle("/metrics", promhttp.Handler())
 
-	// We use port like other 1C products (i.e. 1545, 1540, 1541, 1560-1591)
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
 
 	err := http.ListenAndServe(port, nil)
