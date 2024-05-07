@@ -53,10 +53,10 @@ func recordMetrics() {
 	execPath := "/opt/1cv8/x86_64/" + os.Getenv("platform1c_version") + "/rac"
 	// Examples: 8.3.24.1467
 
-	// sessionListArgs := []string{"session", "list", cluster, adminusr, adminpass}
 	// hidepid (Linux) must be equal 1 or it's unsecure.
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
+
 
 	go func() {
 		for {
@@ -118,8 +118,6 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
-	http.ListenAndServe(port, nil)
-	// We use port like other 1C products (i.e. 1545, 1540, 1541, 1560-1591)
 
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
