@@ -144,7 +144,72 @@ func TestRACQueryParseMultipleBlocksOK(t *testing.T) {
 	}
 }
 
-func TestRACQueryParseMultipleBlocksCount(t *testing.T) {
+func TestRACQueryParseExtraTrailingNLs(t *testing.T) {
+	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
+	conn-id        : 1168
+	application    : "WebServerExtension"
+	connected-at   : 2024-04-06T22:00:03
+	blocked-by-ls  : 0
+
+`
+
+	expected := []map[string]string{
+		{
+			"connection":    "3f97c035-b8e6-4b25-a72c-887b51a72b67",
+			"conn-id":       "1168",
+			"application":   "WebServerExtension",
+			"connected-at":  "2024-04-06T22:00:03",
+			"blocked-by-ls": "0",
+		},
+	}
+
+	query := RACQuery{
+		Output: input,
+	}
+	err := query.Parse()
+	if err != nil {
+		t.Error(err)
+	}
+
+	actual := query.Records
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("(actual) %#v != %#v (expected)\n", actual, expected)
+	}
+}
+
+func TestRACQueryParseExtraLeadingNLs(t *testing.T) {
+	input := `
+	connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
+	conn-id        : 1168
+	application    : "WebServerExtension"
+	connected-at   : 2024-04-06T22:00:03
+	blocked-by-ls  : 0`
+
+	expected := []map[string]string{
+		{
+			"connection":    "3f97c035-b8e6-4b25-a72c-887b51a72b67",
+			"conn-id":       "1168",
+			"application":   "WebServerExtension",
+			"connected-at":  "2024-04-06T22:00:03",
+			"blocked-by-ls": "0",
+		},
+	}
+
+	query := RACQuery{
+		Output: input,
+	}
+	err := query.Parse()
+	if err != nil {
+		t.Error(err)
+	}
+
+	actual := query.Records
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("(actual) %#v != %#v (expected)\n", actual, expected)
+	}
+}
+
+func TestRACQueryCountMultipleBlocks(t *testing.T) {
 	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
 	conn-id        : 1168
 	application    : "WebServerExtension"
@@ -158,6 +223,25 @@ func TestRACQueryParseMultipleBlocksCount(t *testing.T) {
 	blocked-by-ls  : 1`
 
 	expected := 2
+
+	query := RACQuery{
+		Output: input,
+	}
+	err := query.Parse()
+	if err != nil {
+		t.Error(err)
+	}
+
+	actual := query.CountRecords()
+	if actual != expected {
+		t.Fatalf("(actual) %#v != %#v (expected)\n", actual, expected)
+	}
+}
+
+func TestRACQueryCountNoBlocks(t *testing.T) {
+	input := ``
+
+	expected := 0
 
 	query := RACQuery{
 		Output: input,
