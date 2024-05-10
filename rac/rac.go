@@ -70,6 +70,12 @@ func (q *RACQuery) Run() error {
 func (q *RACQuery) Parse() error {
 	outputCleaned := strings.TrimSpace(q.Output)
 	blocks := strings.Split(outputCleaned, "\n\n")
+
+	// If rac's output is (effectively) empty, just return.
+	// Since Split always returns a slice of length >= 1, check the first item's length in characters
+	if len(blocks[0]) == 0 {
+		return nil
+	}
 	fmt.Println(blocks)
 
 	for bindx, block := range blocks {

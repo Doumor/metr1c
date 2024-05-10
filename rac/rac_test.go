@@ -237,3 +237,22 @@ func TestRACQueryCountMultipleBlocks(t *testing.T) {
 		t.Fatalf("(actual) %#v != %#v (expected)\n", actual, expected)
 	}
 }
+
+func TestRACQueryCountNoBlocks(t *testing.T) {
+	input := ``
+
+	expected := 0
+
+	query := RACQuery{
+		Output: input,
+	}
+	err := query.Parse()
+	if err != nil {
+		t.Error(err)
+	}
+
+	actual := query.CountRecords()
+	if actual != expected {
+		t.Fatalf("(actual) %#v != %#v (expected)\n", actual, expected)
+	}
+}
