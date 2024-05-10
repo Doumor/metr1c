@@ -71,7 +71,7 @@ func (q *RACQuery) Run() error {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("error running a '%s %s' command (%w): %s", q.Command, q.SubCommand, q.Option, err, stderr.String())
+		return fmt.Errorf("error running a '%s %s %s' command (%w): %s", q.Command, q.SubCommand, q.Option, err, stderr.String())
 	}
 	q.Output = string(stdout.String())
 
