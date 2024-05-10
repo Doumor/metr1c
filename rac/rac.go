@@ -68,7 +68,8 @@ func (q *RACQuery) Run() error {
 
 // Parse converts `rac` output lines into a slice of map[string]string records
 func (q *RACQuery) Parse() error {
-	blocks := strings.Split(q.Output, "\n\n")
+	outputCleaned := strings.TrimSpace(q.Output)
+	blocks := strings.Split(outputCleaned, "\n\n")
 	fmt.Println(blocks)
 
 	for bindx, block := range blocks {
