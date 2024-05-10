@@ -1,0 +1,16 @@
+---
+name: Move new PRs into In Progress
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  automate-project-columns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: alex-page/github-project-automation-plus@v0.9.0
+        with:
+          project: metr1c
+          column: '⚙️ In Progress'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
