@@ -57,7 +57,6 @@ func recordMetrics() {
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
-
 	go func() {
 		for {
 			// Examine current 1C session info
@@ -75,12 +74,32 @@ func recordMetrics() {
 				log.Fatal(err)
 			}
 			err = sessions.Parse()
-            if err != nil {
-                log.Fatal(err)
-            }
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
+
+			connections := rac.RACQuery{
+				ExecPath:   execPath,
+				Command:    "connection",
+				SubCommand: "list",
+				Cluster:    cluster,
+				User:       adminusr,
+				Password:   adminpass,
+			}
+
+			err = connections.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = connections.Parse()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			connectionCount.Set(float64(sessions.CountRecords()))
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
@@ -92,6 +111,11 @@ var (
 	sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_sessions_count",
 		Help: "The total number of 1c user licenses",
+	})
+
+	connectionCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_connection_count",
+		Help: "The total number of connection",
 	})
 )
 
