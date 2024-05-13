@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"doumor/metr1c/rac"
@@ -57,7 +58,6 @@ func recordMetrics() {
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
-
 	go func() {
 		for {
 			// Examine current 1C session info
@@ -75,12 +75,42 @@ func recordMetrics() {
 				log.Fatal(err)
 			}
 			err = sessions.Parse()
-            if err != nil {
-                log.Fatal(err)
-            }
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
+
+			processes := rac.RACQuery{
+				ExecPath:   execPath,
+				Command:    "process",
+				SubCommand: "list",
+				Cluster:    cluster,
+				User:       adminusr,
+				Password:   adminpass,
+			}
+
+			err = processes.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = processes.Parse()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var procMem int = 0
+			for _, process := range processes.Records {
+				memory, err := strconv.Atoi(process["memory-size"])
+				if err != nil {
+					log.Fatal(err)
+				}
+				procMem += memory
+			}
+
+			// Count current 1C sessions
+			processMemTotal.Set(float64(procMem))
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
@@ -92,6 +122,11 @@ var (
 	sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_sessions_count",
 		Help: "The total number of 1c user licenses",
+	})
+
+	processMemTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_processes_total_memory",
+		Help: "The total number of used memory by all processes",
 	})
 )
 
