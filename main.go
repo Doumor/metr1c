@@ -163,12 +163,12 @@ var (
 	// session list --licenses
 	softLicensesCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_soft_licenses_count",
-		Help: "The total number of 1c user sessions",
+		Help: "The total number of 1c user used soft licenses",
 	})
 
 	haspLicensesCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_hasp_licenses_count",
-		Help: "The total number of 1c user sessions",
+		Help: "The total number of 1c user used hasp licenses",
 	})
 
 
