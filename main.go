@@ -93,7 +93,7 @@ func recordMetrics() {
 				switch session["hibernate"] {
 					case "no": activeSessions++
 					case "yes" : hibernatedSessions++
-					default : log.Fatal("'rac session list' hibernate field error")
+					default : log.Println("'rac session list' hibernate unexpected field value")
 				}
 			}
 
