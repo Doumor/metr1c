@@ -131,6 +131,7 @@ func recordMetrics() {
 				switch sessionLicense["license-type"] {
 					case "soft": softLicenses++
 					case "HASP": haspLicenses++
+                                        default : log.Println("'rac session list --licenses' license-type unexpected field value")
 				}
 			}
 
