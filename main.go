@@ -87,17 +87,18 @@ func recordMetrics() {
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
 
-			var activeSessions, hibernateSessions int = 0, 0
+			var activeSessions, hibernatedSessions int = 0, 0
 
 			for _, session := range sessions.Records {
 				switch session["hibernate"] {
 					case "no": activeSessions++
-					case "yes" : hibernateSessions++
+					case "yes" : hibernatedSessions++
+					default : log.Fatal("'rac session list' hibernate field error")
 				}
 			}
 
 			activeSessionCount.Set(float64(activeSessions))
-			hibernatedSessionCount.Set(float64(hibernateSessions))
+			hibernatedSessionCount.Set(float64(hibernatedSessions))
 
 			// ! rac session list --licenses
 			// Examine the current 1C session information in terms of licenses
