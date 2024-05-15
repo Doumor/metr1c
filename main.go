@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"doumor/metr1c/rac"
@@ -176,6 +177,17 @@ func recordMetrics() {
 			// Count current 1C processes
 			processCount.Set(float64(processes.CountRecords()))
 
+			var procMem int = 0
+			for _, process := range processes.Records {
+				memory, err := strconv.Atoi(process["memory-size"])
+				if err != nil {
+					log.Fatal(err)
+				}
+				procMem += memory
+			}
+
+			// Count total memory used by all processes
+			processMemTotal.Set(float64(procMem))
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
@@ -219,6 +231,11 @@ var (
 	processCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_process_count",
 		Help: "The total number of processes",
+	})
+
+	processMemTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_processes_total_memory_kbytes",
+		Help: "The total number of used memory by all processes (KB)",
 	})
 )
 
