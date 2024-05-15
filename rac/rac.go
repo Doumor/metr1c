@@ -5,6 +5,7 @@ as well as parsing its output.
 package rac
 
 import (
+	"bytes"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -48,6 +49,7 @@ type RACQuery struct {
 	ExecPath   string
 	Command    string
 	SubCommand string
+	Option     string
 	Cluster    string
 	User       string
 	Password   string
@@ -57,11 +59,21 @@ type RACQuery struct {
 
 // Run a query against the `rac` tool
 func (q *RACQuery) Run() error {
-	output, err := exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Cluster, q.User, q.Password).Output()
-	if err != nil {
-		return fmt.Errorf("error running a '%s %s' command: %w", q.Command, q.SubCommand, err)
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Option, q.Cluster, q.User, q.Password)
+
+	// Cannot pass empty arg
+	if q.Option == "" {
+		cmd = exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Cluster, q.User, q.Password)
 	}
-	q.Output = string(output)
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("error running a '%s %s %s' command (%w): %s", q.Command, q.SubCommand, q.Option, err, stderr.String())
+	}
+	q.Output = string(stdout.String())
 
 	return nil
 }
@@ -76,7 +88,8 @@ func (q *RACQuery) Parse() error {
 	if len(blocks[0]) == 0 {
 		return nil
 	}
-	fmt.Println(blocks)
+	// Debug
+	//fmt.Println(blocks)
 
 	for bindx, block := range blocks {
 		record := map[string]string{}
