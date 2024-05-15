@@ -109,7 +109,7 @@ func recordMetrics() {
 				procMem += memory
 			}
 
-			// Count current 1C sessions
+			// Count total memory used by all processes
 			processMemTotal.Set(float64(procMem))
 
 			// Set a timeout before the next metrics gathering
