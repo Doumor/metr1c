@@ -115,7 +115,7 @@ var (
 
 	connectionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_connection_count",
-		Help: "The total number of connection",
+		Help: "The total number of connections",
 	})
 )
 
