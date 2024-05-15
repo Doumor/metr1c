@@ -155,6 +155,28 @@ func recordMetrics() {
 			connectionCount.Set(float64(sessions.CountRecords()))
 
 
+			processes := rac.RACQuery{
+				ExecPath:   execPath,
+				Command:    "process",
+				SubCommand: "list",
+				Cluster:    cluster,
+				User:       adminusr,
+				Password:   adminpass,
+			}
+			// Get output from a rac process list query
+			err = processes.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = processes.Parse()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// Count current 1C processes
+			processCount.Set(float64(processes.CountRecords()))
+
+
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
 		}
@@ -192,6 +214,11 @@ var (
 	connectionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_connection_count",
 		Help: "The total number of connections",
+	})
+
+	processCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_process_count",
+		Help: "The total number of processes",
 	})
 )
 
