@@ -59,11 +59,13 @@ func recordMetrics() {
 
 	go func() {
 		for {
+			// ! rac session list
 			// Examine current 1C session info
 			sessions := rac.RACQuery{
 				ExecPath:   execPath,
 				Command:    "session",
 				SubCommand: "list",
+				Option:     "",
 				Cluster:    cluster,
 				User:       adminusr,
 				Password:   adminpass,
@@ -73,6 +75,7 @@ func recordMetrics() {
 			if err != nil {
 				log.Fatal(err)
 			}
+
 			err = sessions.Parse()
 			if err != nil {
 				log.Fatal(err)
@@ -80,6 +83,77 @@ func recordMetrics() {
 
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
+
+			var activeSessions, hibernatedSessions int = 0, 0
+
+			for _, session := range sessions.Records {
+				switch session["hibernate"] {
+					case "no": activeSessions++
+					case "yes" : hibernatedSessions++
+					default : log.Println("'rac session list' hibernate unexpected field value")
+				}
+			}
+
+			activeSessionCount.Set(float64(activeSessions))
+			hibernatedSessionCount.Set(float64(hibernatedSessions))
+
+			// ! rac session list --licenses
+			// Examine the current 1C session information in terms of licenses
+			sessionsLicenses := rac.RACQuery{
+				ExecPath:   execPath,
+				Command:    "session",
+				SubCommand: "list",
+				Option:     `--licenses`,
+				Cluster:    cluster,
+				User:       adminusr,
+				Password:   adminpass,
+			}
+
+			err = sessionsLicenses.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			err = sessionsLicenses.Parse()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var softLicenses, haspLicenses int = 0, 0
+
+			// Count field "license-type" for soft and hasp licenses
+			for _, sessionLicense := range sessionsLicenses.Records {
+				switch sessionLicense["license-type"] {
+					case "soft": softLicenses++
+					case "HASP": haspLicenses++
+                                        default : log.Println("'rac session list --licenses' license-type unexpected field value")
+				}
+			}
+
+			softLicensesCount.Set(float64(softLicenses))
+			haspLicensesCount.Set(float64(haspLicenses))
+
+
+			connections := rac.RACQuery{
+				ExecPath:   execPath,
+				Command:    "connection",
+				SubCommand: "list",
+				Cluster:    cluster,
+				User:       adminusr,
+				Password:   adminpass,
+			}
+
+			err = connections.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = connections.Parse()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			connectionCount.Set(float64(sessions.CountRecords()))
+
 
 			processes := rac.RACQuery{
 				ExecPath:   execPath,
@@ -89,7 +163,7 @@ func recordMetrics() {
 				User:       adminusr,
 				Password:   adminpass,
 			}
-			// Get output from a rac session list query
+			// Get output from a rac process list query
 			err = processes.Run()
 			if err != nil {
 				log.Fatal(err)
@@ -99,8 +173,9 @@ func recordMetrics() {
 				log.Fatal(err)
 			}
 
-			// Count current 1C sessions
+			// Count current 1C processes
 			processCount.Set(float64(processes.CountRecords()))
+
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
@@ -109,9 +184,36 @@ func recordMetrics() {
 }
 
 var (
+	// session list
 	sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_sessions_count",
-		Help: "The total number of 1c user licenses",
+		Help: "The total number of 1c user sessions",
+	})
+
+	activeSessionCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_active_sessions_count",
+		Help: "The total number of 1c user hybernated sessions",
+	})
+
+	hibernatedSessionCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_hybernated_sessions_count",
+		Help: "The total number of 1c user hybernated sessions",
+	})
+
+	// session list --licenses
+	softLicensesCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_soft_licenses_count",
+		Help: "The total number of 1c user used soft licenses",
+	})
+
+	haspLicensesCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_hasp_licenses_count",
+		Help: "The total number of 1c user used hasp licenses",
+	})
+
+	connectionCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "platform1c_connection_count",
+		Help: "The total number of connections",
 	})
 
 	processCount = promauto.NewGauge(prometheus.GaugeOpts{
