@@ -126,7 +126,7 @@ var (
 
 	processMemTotal = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_processes_total_memory",
-		Help: "The total number of used memory by all processes",
+		Help: "The total number of used memory by all processes (kb)",
 	})
 )
 
