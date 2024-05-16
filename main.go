@@ -76,35 +76,21 @@ func recordMetrics() {
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
+	baseQuery := rac.RACQuery{
+		ExecPath:   execPath,
+		Cluster:    cluster,
+		User:       adminusr,
+		Password:   adminpass,
+	}
+
 	go func() {
 		for {
-			// ! rac session list
-			// Examine current 1C session info
-			sessions := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "session",
-				SubCommand: "list",
-				Option:     "",
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
-			// Get output from a rac session list query
-			err := sessions.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
+			// Sessions
+			sessions := getRecords(baseQuery, "session", "list", "")
 
-			err = sessions.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
 
-			var activeSessions, hibernatedSessions int = 0, 0
-
+			var activeSessions, hibernatedSessions int
 			for _, session := range sessions.Records {
 				switch session["hibernate"] {
 					case "no": activeSessions++
@@ -116,36 +102,16 @@ func recordMetrics() {
 			activeSessionCount.Set(float64(activeSessions))
 			hibernatedSessionCount.Set(float64(hibernatedSessions))
 
-			// ! rac session list --licenses
-			// Examine the current 1C session information in terms of licenses
-			sessionsLicenses := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "session",
-				SubCommand: "list",
-				Option:     `--licenses`,
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
 
-			err = sessionsLicenses.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
+			// Session licenses
+			sessionsLicenses := getRecords(baseQuery, "session", "list", `--licenses`)
 
-			err = sessionsLicenses.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			var softLicenses, haspLicenses int = 0, 0
-
-			// Count field "license-type" for soft and hasp licenses
+			var softLicenses, haspLicenses int
 			for _, sessionLicense := range sessionsLicenses.Records {
 				switch sessionLicense["license-type"] {
 					case "soft": softLicenses++
 					case "HASP": haspLicenses++
-                                        default : log.Println("'rac session list --licenses' license-type unexpected field value")
+                    default : log.Println("'rac session list --licenses' license-type unexpected field value")
 				}
 			}
 
@@ -153,49 +119,16 @@ func recordMetrics() {
 			haspLicensesCount.Set(float64(haspLicenses))
 
 
-			connections := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "connection",
-				SubCommand: "list",
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
-
-			err = connections.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = connections.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			connectionCount.Set(float64(sessions.CountRecords()))
+			// Connections
+			connections := getRecords(baseQuery, "connection", "list", "")
+			connectionCount.Set(float64(connections.CountRecords()))
 
 
-			processes := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "process",
-				SubCommand: "list",
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
-			// Get output from a rac process list query
-			err = processes.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = processes.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Count current 1C processes
+			// Processes
+			processes := getRecords(baseQuery, "process", "list", "")
 			processCount.Set(float64(processes.CountRecords()))
 
-			var procMem int = 0
+			var procMem int
 			for _, process := range processes.Records {
 				memory, err := strconv.Atoi(process["memory-size"])
 				if err != nil {
@@ -204,11 +137,11 @@ func recordMetrics() {
 				procMem += memory
 			}
 
-			// Count total memory used by all processes
 			processMemTotal.Set(float64(procMem))
 
+
 			// Set a timeout before the next metrics gathering
-			time.Sleep(60 * time.Second) // 1 min
+			time.Sleep(60 * time.Second)
 		}
 	}()
 }
