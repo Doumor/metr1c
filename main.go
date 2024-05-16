@@ -35,6 +35,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
+	query.Command = cmd
+	query.SubCommand = subcmd
+	query.Option = option
+
+	err := query.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = query.Parse()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return query
+}
+
 func recordMetrics() {
 	// see in "rac" help
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
