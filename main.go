@@ -19,6 +19,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -33,6 +34,33 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+type jsonSessionsMetrics struct {
+        SessionsCount			int `json:"session_count"`
+        ActiveSessionsCount		int `json:"active_sessions_count"`
+        HybernatedSessionsCount		int `json:"hybernated_sessions_count"`
+}
+
+type jsonLicensesMetrics struct {
+        SoftLicensesCount		int `json:"soft_licenses_count"`
+        HASPLicensesCount		int `json:"hasp_licenses_count"`
+}
+
+type jsonConnectionsMetrics struct {
+        ConnectionsCount		int `json:"connection_count"`
+}
+
+type jsonProcessesMetrics struct {
+        ProcessesCount			int `json:"process_count"`
+        ProcessesTotalMemoryCount	int `json:"processes_total_memory_kbytes"`
+}
+
+var (
+	jsonSessionsMetricsCurrent = jsonSessionsMetrics{}
+	jsonLicensesMetricsCurrent = jsonLicensesMetrics{}
+	jsonConnectionsMetricsCurrent = jsonConnectionsMetrics{}
+	jsonProcessesMetricsCurrent = jsonProcessesMetrics{}
 )
 
 func recordMetrics() {
@@ -60,7 +88,7 @@ func recordMetrics() {
 
 	go func() {
 		for {
-			// ! rac session list
+			// # rac session list
 			// Examine current 1C session info
 			sessions := rac.RACQuery{
 				ExecPath:   execPath,
@@ -84,6 +112,7 @@ func recordMetrics() {
 
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
+			jsonSessionsMetricsCurrent.SessionsCount = sessions.CountRecords()
 
 			var activeSessions, hibernatedSessions int = 0, 0
 
@@ -98,7 +127,10 @@ func recordMetrics() {
 			activeSessionCount.Set(float64(activeSessions))
 			hibernatedSessionCount.Set(float64(hibernatedSessions))
 
-			// ! rac session list --licenses
+			jsonSessionsMetricsCurrent.ActiveSessionsCount = activeSessions
+			jsonSessionsMetricsCurrent.HybernatedSessionsCount = hibernatedSessions
+
+			// # rac session list --licenses
 			// Examine the current 1C session information in terms of licenses
 			sessionsLicenses := rac.RACQuery{
 				ExecPath:   execPath,
@@ -134,6 +166,8 @@ func recordMetrics() {
 			softLicensesCount.Set(float64(softLicenses))
 			haspLicensesCount.Set(float64(haspLicenses))
 
+			jsonLicensesMetricsCurrent.SoftLicensesCount = softLicenses
+			jsonLicensesMetricsCurrent.HASPLicensesCount = haspLicenses
 
 			connections := rac.RACQuery{
 				ExecPath:   execPath,
@@ -153,9 +187,10 @@ func recordMetrics() {
 				log.Fatal(err)
 			}
 
-			connectionCount.Set(float64(sessions.CountRecords()))
+			connectionCount.Set(float64(connections.CountRecords()))
+			jsonConnectionsMetricsCurrent.ConnectionsCount = connections.CountRecords()
 
-
+			// # rac process list
 			processes := rac.RACQuery{
 				ExecPath:   execPath,
 				Command:    "process",
@@ -176,6 +211,7 @@ func recordMetrics() {
 
 			// Count current 1C processes
 			processCount.Set(float64(processes.CountRecords()))
+			jsonProcessesMetricsCurrent.ProcessesTotalMemoryCount = processes.CountRecords()
 
 			var procMem int = 0
 			for _, process := range processes.Records {
@@ -188,6 +224,7 @@ func recordMetrics() {
 
 			// Count total memory used by all processes
 			processMemTotal.Set(float64(procMem))
+			jsonProcessesMetricsCurrent.ProcessesTotalMemoryCount = procMem
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
@@ -223,11 +260,13 @@ var (
 		Help: "The total number of 1c user used hasp licenses",
 	})
 
+	// connection list
 	connectionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_connection_count",
 		Help: "The total number of connections",
 	})
 
+	// process list
 	processCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_process_count",
 		Help: "The total number of processes",
@@ -238,6 +277,30 @@ var (
 		Help: "The total number of used memory by all processes (KB)",
 	})
 )
+
+func apiSessions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(jsonSessionsMetricsCurrent)
+}
+
+func apiLicenses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(jsonLicensesMetricsCurrent)
+}
+
+func apiConnections(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(jsonConnectionsMetricsCurrent)
+}
+
+func apiProcesses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(jsonProcessesMetricsCurrent)
+}
 
 func main() {
 	var help bool
@@ -258,6 +321,11 @@ func main() {
 	}
 
 	recordMetrics()
+
+	http.Handle("/api/sessions", http.HandlerFunc(apiSessions))
+	http.Handle("/api/licenses", http.HandlerFunc(apiLicenses))
+	http.Handle("/api/connections", http.HandlerFunc(apiConnections))
+	http.Handle("/api/processes", http.HandlerFunc(apiProcesses))
 
 	http.Handle("/metrics", promhttp.Handler())
 
