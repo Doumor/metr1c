@@ -281,25 +281,37 @@ var (
 func apiSessions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(jsonSessionsMetricsCurrent)
+	err := json.NewEncoder(w).Encode(jsonSessionsMetricsCurrent)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func apiLicenses(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(jsonLicensesMetricsCurrent)
+	err := json.NewEncoder(w).Encode(jsonLicensesMetricsCurrent)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func apiConnections(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(jsonConnectionsMetricsCurrent)
+	err := json.NewEncoder(w).Encode(jsonConnectionsMetricsCurrent)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func apiProcesses(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(jsonProcessesMetricsCurrent)
+	err := json.NewEncoder(w).Encode(jsonProcessesMetricsCurrent)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
