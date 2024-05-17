@@ -53,6 +53,45 @@ func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
 	return query
 }
 
+func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
+	var active, hibernated int
+	for _, session := range sessions.Records {
+		switch session["hibernate"] {
+			case "no": active++
+			case "yes" : hibernated++
+			default : log.Println("'rac session list' hibernate unexpected field value")
+		}
+	}
+
+	return float64(active), float64(hibernated)
+}
+
+func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
+	var soft, hasp int
+	for _, license := range licenses.Records {
+		switch license["license-type"] {
+			case "soft": soft++
+			case "HASP": hasp++
+			default : log.Println("'rac session list --licenses' license-type unexpected field value")
+		}
+	}
+
+	return float64(soft), float64(hasp)
+}
+
+func countTotalProcMem(processes rac.RACQuery) (float64, error) {
+	var total int
+	for _, process := range processes.Records {
+		memory, err := strconv.Atoi(process["memory-size"])
+		if err != nil {
+			return 0, fmt.Errorf("parsing process 'memory-size': %w", err)
+		}
+		total += memory
+	}
+
+	return float64(total), nil
+}
+
 func recordMetrics() {
 	// see in "rac" help
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
@@ -89,34 +128,17 @@ func recordMetrics() {
 			sessions := getRecords(baseQuery, "session", "list", "")
 
 			sessionCount.Set(float64(sessions.CountRecords()))
-
-			var activeSessions, hibernatedSessions int
-			for _, session := range sessions.Records {
-				switch session["hibernate"] {
-					case "no": activeSessions++
-					case "yes" : hibernatedSessions++
-					default : log.Println("'rac session list' hibernate unexpected field value")
-				}
-			}
-
-			activeSessionCount.Set(float64(activeSessions))
-			hibernatedSessionCount.Set(float64(hibernatedSessions))
+			
+			active, hibernated := countSessionTypes(sessions)
+			activeSessionCount.Set(active)
+			hibernatedSessionCount.Set(hibernated)
 
 
 			// Session licenses
 			sessionsLicenses := getRecords(baseQuery, "session", "list", `--licenses`)
-
-			var softLicenses, haspLicenses int
-			for _, sessionLicense := range sessionsLicenses.Records {
-				switch sessionLicense["license-type"] {
-					case "soft": softLicenses++
-					case "HASP": haspLicenses++
-                    default : log.Println("'rac session list --licenses' license-type unexpected field value")
-				}
-			}
-
-			softLicensesCount.Set(float64(softLicenses))
-			haspLicensesCount.Set(float64(haspLicenses))
+			soft, hasp := countLicenseTypes(sessionsLicenses)
+			softLicensesCount.Set(soft)
+			haspLicensesCount.Set(hasp)
 
 
 			// Connections
@@ -127,17 +149,12 @@ func recordMetrics() {
 			// Processes
 			processes := getRecords(baseQuery, "process", "list", "")
 			processCount.Set(float64(processes.CountRecords()))
-
-			var procMem int
-			for _, process := range processes.Records {
-				memory, err := strconv.Atoi(process["memory-size"])
-				if err != nil {
-					log.Fatal(err)
-				}
-				procMem += memory
+			
+			memory, err := countTotalProcMem(processes)
+			if err != nil {
+				log.Println(err)
 			}
-
-			processMemTotal.Set(float64(procMem))
+			processMemTotal.Set(memory)
 
 
 			// Set a timeout before the next metrics gathering
