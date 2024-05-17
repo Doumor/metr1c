@@ -61,7 +61,7 @@ func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
 		case "yes":
 			hibernated++
 		default:
-			log.Println("'rac session list' hibernate unexpected field value")
+			log.Printf("'rac session list': unexpected 'hibernate' field value: '%s'", session["hibernate"])
 		}
 	}
 
@@ -77,7 +77,7 @@ func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
 		case "HASP":
 			hasp++
 		default:
-			log.Println("'rac session list --licenses' license-type unexpected field value")
+			log.Printf("'rac session list --licenses': unexpected 'license-type' field value: '%s'", license["license-type"])
 		}
 	}
 
