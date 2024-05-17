@@ -57,9 +57,12 @@ func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
 	var active, hibernated int
 	for _, session := range sessions.Records {
 		switch session["hibernate"] {
-			case "no": active++
-			case "yes" : hibernated++
-			default : log.Println("'rac session list' hibernate unexpected field value")
+		case "no":
+			active++
+		case "yes":
+			hibernated++
+		default:
+			log.Println("'rac session list' hibernate unexpected field value")
 		}
 	}
 
@@ -70,9 +73,12 @@ func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
 	var soft, hasp int
 	for _, license := range licenses.Records {
 		switch license["license-type"] {
-			case "soft": soft++
-			case "HASP": hasp++
-			default : log.Println("'rac session list --licenses' license-type unexpected field value")
+		case "soft":
+			soft++
+		case "HASP":
+			hasp++
+		default:
+			log.Println("'rac session list --licenses' license-type unexpected field value")
 		}
 	}
 
@@ -116,10 +122,10 @@ func recordMetrics() {
 	// may see it on htop if hidepid equals 0.
 
 	baseQuery := rac.RACQuery{
-		ExecPath:   execPath,
-		Cluster:    cluster,
-		User:       adminusr,
-		Password:   adminpass,
+		ExecPath: execPath,
+		Cluster:  cluster,
+		User:     adminusr,
+		Password: adminpass,
 	}
 
 	go func() {
@@ -128,11 +134,10 @@ func recordMetrics() {
 			sessions := getRecords(baseQuery, "session", "list", "")
 
 			sessionCount.Set(float64(sessions.CountRecords()))
-			
+
 			active, hibernated := countSessionTypes(sessions)
 			activeSessionCount.Set(active)
 			hibernatedSessionCount.Set(hibernated)
-
 
 			// Session licenses
 			sessionsLicenses := getRecords(baseQuery, "session", "list", `--licenses`)
@@ -140,22 +145,19 @@ func recordMetrics() {
 			softLicensesCount.Set(soft)
 			haspLicensesCount.Set(hasp)
 
-
 			// Connections
 			connections := getRecords(baseQuery, "connection", "list", "")
 			connectionCount.Set(float64(connections.CountRecords()))
 
-
 			// Processes
 			processes := getRecords(baseQuery, "process", "list", "")
 			processCount.Set(float64(processes.CountRecords()))
-			
+
 			memory, err := countTotalProcMem(processes)
 			if err != nil {
 				log.Println(err)
 			}
 			processMemTotal.Set(memory)
-
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
