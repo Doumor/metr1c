@@ -29,7 +29,6 @@ import (
 
 	"doumor/metr1c/rac"
 
-	// prometheus exporter
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -102,8 +101,6 @@ func recordMetrics() {
 	// see in "rac" help
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
-	// 07593cfe-64c2-4656-be5f-61c3226286d5
-
 	// There are configurations without an administrator, but
 	// this is insecure and metr1c only works with configurations
 	// that have an administrator.
@@ -166,7 +163,6 @@ func recordMetrics() {
 }
 
 var (
-	// session list
 	sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_sessions_count",
 		Help: "The total number of 1c user sessions",
@@ -182,7 +178,6 @@ var (
 		Help: "The total number of 1c user hybernated sessions",
 	})
 
-	// session list --licenses
 	softLicensesCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_soft_licenses_count",
 		Help: "The total number of 1c user used soft licenses",
