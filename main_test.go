@@ -15,7 +15,10 @@ app-id                           : WebClient
 last-active-at                   : 2024-05-17T11:34:53
 hibernate                        : no`
 
-	sessions.Parse()
+	err := sessions.Parse()
+	if err != nil {
+		t.Error(err)
+	}
 	expectedActive := 1.0
 	expectedHibernating := 0.0
 
@@ -43,7 +46,11 @@ app-id                           : WebClient
 last-active-at                   : 2024-05-17T11:34:53
 hibernate                        : yes`
 
-	sessions.Parse()
+	err := sessions.Parse()
+	if err != nil {
+		t.Error(err)
+	}
+
 	expectedActive := 1.0
 	expectedHibernating := 1.0
 
@@ -60,7 +67,11 @@ user-name          : Администратор
 app-id             : WebClient
 license-type       : soft`
 
-	licenses.Parse()
+	err := licenses.Parse()
+	if err != nil {
+		t.Error(err)
+	}
+
 	expectedSoft := 1.0
 	expectedHASP := 0.0
 
@@ -82,7 +93,11 @@ user-name          : Zeleboba
 app-id             : WebClient
 license-type       : HASP`
 
-	licenses.Parse()
+	err := licenses.Parse()
+	if err != nil {
+		t.Error(err)
+	}
+
 	expectedSoft := 1.0
 	expectedHASP := 1.0
 
@@ -100,7 +115,10 @@ port                 : 1560
 pid                  : 1324
 memory-size          : 1024`
 
-	processes.Parse()
+	err := processes.Parse()
+	if err != nil {
+		t.Error(err)
+	}
 
 	expected := 1024.0
 	actual, err := countTotalProcMem(processes)
@@ -127,7 +145,10 @@ port                 : 1560
 pid                  : 1324
 memory-size          : 2048`
 
-	processes.Parse()
+	err := processes.Parse()
+	if err != nil {
+		t.Error(err)
+	}
 
 	expected := 3072.0
 	actual, err := countTotalProcMem(processes)
