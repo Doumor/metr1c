@@ -36,7 +36,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func recordMetrics() {
+func recordMetrics(server *api.APIServer) {
 	// see in "rac" help
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
@@ -85,7 +85,7 @@ func recordMetrics() {
 
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
-			apiSummary.SessionCount = sessions.CountRecords()
+			server.Summary.SessionCount = sessions.CountRecords()
 
 			var activeSessions, hibernatedSessions int = 0, 0
 
@@ -103,8 +103,8 @@ func recordMetrics() {
 			activeSessionCount.Set(float64(activeSessions))
 			hibernatedSessionCount.Set(float64(hibernatedSessions))
 
-			apiSummary.SessionsActive = activeSessions
-			apiSummary.SessionsHybernated = hibernatedSessions
+			server.Summary.SessionsActive = activeSessions
+			server.Summary.SessionsHybernated = hibernatedSessions
 
 			// # rac session list --licenses
 			// Examine the current 1C session information in terms of licenses
@@ -145,8 +145,8 @@ func recordMetrics() {
 			softLicensesCount.Set(float64(softLicenses))
 			haspLicensesCount.Set(float64(haspLicenses))
 
-			apiSummary.UsedLicensesSoft = softLicenses
-			apiSummary.UsedLicensesHASP = haspLicenses
+			server.Summary.UsedLicensesSoft = softLicenses
+			server.Summary.UsedLicensesHASP = haspLicenses
 
 			connections := rac.RACQuery{
 				ExecPath:   execPath,
@@ -167,7 +167,7 @@ func recordMetrics() {
 			}
 
 			connectionCount.Set(float64(connections.CountRecords()))
-			apiSummary.ConnectionCount = connections.CountRecords()
+			server.Summary.ConnectionCount = connections.CountRecords()
 
 			// # rac process list
 			processes := rac.RACQuery{
@@ -190,7 +190,7 @@ func recordMetrics() {
 
 			// Count current 1C processes
 			processCount.Set(float64(processes.CountRecords()))
-			apiSummary.ProcessCount = processes.CountRecords()
+			server.Summary.ProcessCount = processes.CountRecords()
 
 			var procMem int = 0
 			for _, process := range processes.Records {
@@ -203,7 +203,9 @@ func recordMetrics() {
 
 			// Count total memory used by all processes
 			processMemTotal.Set(float64(procMem))
-			apiSummary.ProcessesMemoryKB = procMem
+			server.Summary.ProcessesMemoryKB = procMem
+
+			log.Printf("%#v", server.Summary)
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second) // 1 min
@@ -255,45 +257,7 @@ var (
 		Name: "platform1c_processes_total_memory_kbytes",
 		Help: "The total number of used memory by all processes (KB)",
 	})
-
-	apiSummary = api.Summary{}
 )
-
-// func apiSessions(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// 	err := json.NewEncoder(w).Encode(jsonSessionsMetricsCurrent)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
-
-// func apiLicenses(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// 	err := json.NewEncoder(w).Encode(jsonLicensesMetricsCurrent)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
-
-// func apiConnections(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// 	err := json.NewEncoder(w).Encode(jsonConnectionsMetricsCurrent)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
-
-// func apiProcesses(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// 	err := json.NewEncoder(w).Encode(jsonProcessesMetricsCurrent)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
 
 func main() {
 	var help bool
@@ -313,15 +277,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	recordMetrics()
-
-	// http.Handle("/api/sessions", http.HandlerFunc(apiSessions))
-	// http.Handle("/api/licenses", http.HandlerFunc(apiLicenses))
-	// http.Handle("/api/connections", http.HandlerFunc(apiConnections))
-	// http.Handle("/api/processes", http.HandlerFunc(apiProcesses))
+	server := api.NewAPIServer()
+	recordMetrics(server)
 
 	http.Handle("/metrics", promhttp.Handler())
-	http.Handle("/api/summary", http.HandlerFunc(api.ServeJSON(apiSummary)))
+	http.Handle("/api/summary", http.HandlerFunc(server.ServeSummary))
 
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
 

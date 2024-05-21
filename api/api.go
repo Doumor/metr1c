@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
+	"sync"
 )
 
-type Summary struct {
+type apiSummary struct {
 	Platform1CVersion  string `json:"platform1c_version"`
 	SessionCount       int    `json:"sessions_total"`
 	SessionsActive     int    `json:"sessions_active"`
@@ -18,14 +18,23 @@ type Summary struct {
 	ProcessesMemoryKB  int    `json:"processes_mem_kb_total"`
 }
 
-func ServeJSON(data interface{}) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+type APIServer struct {
+	mutex   sync.RWMutex
+	Summary apiSummary
+}
 
-		err := json.NewEncoder(w).Encode(data)
-		if err != nil {
-			log.Fatalf("serving jsonified data via an API handle '%s': %s", r.URL.Path, err)
-		}
-	}
+func NewAPIServer() *APIServer {
+	return &APIServer{}
+}
+
+func RequestHandler(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
+func (s *APIServer) ServeSummary(w http.ResponseWriter, r *http.Request) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	RequestHandler(w, s.Summary)
 }
