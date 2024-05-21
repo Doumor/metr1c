@@ -85,10 +85,9 @@ func recordMetrics(server *api.APIServer) {
 
 			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
-			server.Summary.SessionCount = sessions.CountRecords()
-
+			
 			var activeSessions, hibernatedSessions int = 0, 0
-
+			
 			for _, session := range sessions.Records {
 				switch session["hibernate"] {
 				case "no":
@@ -99,13 +98,11 @@ func recordMetrics(server *api.APIServer) {
 					log.Println("'rac session list' hibernate unexpected field value")
 				}
 			}
-
+			
 			activeSessionCount.Set(float64(activeSessions))
 			hibernatedSessionCount.Set(float64(hibernatedSessions))
-
-			server.Summary.SessionsActive = activeSessions
-			server.Summary.SessionsHybernated = hibernatedSessions
-
+			
+			
 			// # rac session list --licenses
 			// Examine the current 1C session information in terms of licenses
 			sessionsLicenses := rac.RACQuery{
@@ -117,19 +114,19 @@ func recordMetrics(server *api.APIServer) {
 				User:       adminusr,
 				Password:   adminpass,
 			}
-
+			
 			err = sessionsLicenses.Run()
 			if err != nil {
 				log.Fatal(err)
 			}
-
+			
 			err = sessionsLicenses.Parse()
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			var softLicenses, haspLicenses int = 0, 0
-
+			
 			// Count field "license-type" for soft and hasp licenses
 			for _, sessionLicense := range sessionsLicenses.Records {
 				switch sessionLicense["license-type"] {
@@ -141,13 +138,11 @@ func recordMetrics(server *api.APIServer) {
 					log.Println("'rac session list --licenses' license-type unexpected field value")
 				}
 			}
-
+			
 			softLicensesCount.Set(float64(softLicenses))
 			haspLicensesCount.Set(float64(haspLicenses))
-
-			server.Summary.UsedLicensesSoft = softLicenses
-			server.Summary.UsedLicensesHASP = haspLicenses
-
+			
+			
 			connections := rac.RACQuery{
 				ExecPath:   execPath,
 				Command:    "connection",
@@ -156,7 +151,7 @@ func recordMetrics(server *api.APIServer) {
 				User:       adminusr,
 				Password:   adminpass,
 			}
-
+			
 			err = connections.Run()
 			if err != nil {
 				log.Fatal(err)
@@ -165,10 +160,9 @@ func recordMetrics(server *api.APIServer) {
 			if err != nil {
 				log.Fatal(err)
 			}
-
+			
 			connectionCount.Set(float64(connections.CountRecords()))
-			server.Summary.ConnectionCount = connections.CountRecords()
-
+			
 			// # rac process list
 			processes := rac.RACQuery{
 				ExecPath:   execPath,
@@ -190,8 +184,7 @@ func recordMetrics(server *api.APIServer) {
 
 			// Count current 1C processes
 			processCount.Set(float64(processes.CountRecords()))
-			server.Summary.ProcessCount = processes.CountRecords()
-
+			
 			var procMem int = 0
 			for _, process := range processes.Records {
 				memory, err := strconv.Atoi(process["memory-size"])
@@ -200,10 +193,20 @@ func recordMetrics(server *api.APIServer) {
 				}
 				procMem += memory
 			}
-
+			
 			// Count total memory used by all processes
 			processMemTotal.Set(float64(procMem))
+			
+			server.Mutex.Lock()
+			server.Summary.SessionCount = sessions.CountRecords()
+			server.Summary.SessionsActive = activeSessions
+			server.Summary.SessionsHybernated = hibernatedSessions
+			server.Summary.UsedLicensesSoft = softLicenses
+			server.Summary.UsedLicensesHASP = haspLicenses
+			server.Summary.ConnectionCount = connections.CountRecords()
+			server.Summary.ProcessCount = processes.CountRecords()
 			server.Summary.ProcessesMemoryKB = procMem
+			server.Mutex.Unlock()
 
 			log.Printf("%#v", server.Summary)
 

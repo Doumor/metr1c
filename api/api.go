@@ -19,7 +19,7 @@ type apiSummary struct {
 }
 
 type APIServer struct {
-	mutex   sync.RWMutex
+	Mutex   sync.RWMutex
 	Summary apiSummary
 }
 
@@ -33,8 +33,8 @@ func RequestHandler(w http.ResponseWriter, data interface{}) {
 }
 
 func (s *APIServer) ServeSummary(w http.ResponseWriter, r *http.Request) {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	s.Mutex.RLock()
+	defer s.Mutex.RUnlock()
 
 	RequestHandler(w, s.Summary)
 }
