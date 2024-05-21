@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type apiSummary struct {
+type APISummary struct {
 	Platform1CVersion  string `json:"platform1c_version"`
 	SessionCount       int    `json:"sessions_total"`
 	SessionsActive     int    `json:"sessions_active"`
@@ -18,23 +18,30 @@ type apiSummary struct {
 	ProcessesMemoryKB  int    `json:"processes_mem_kb_total"`
 }
 
+func requestHandler(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
 type APIServer struct {
-	Mutex   sync.RWMutex
-	Summary apiSummary
+	mutex   sync.RWMutex
+	summary APISummary
 }
 
 func NewAPIServer() *APIServer {
 	return &APIServer{}
 }
 
-func RequestHandler(w http.ResponseWriter, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+func (s *APIServer) ServeSummary(w http.ResponseWriter, r *http.Request) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	requestHandler(w, s.summary)
 }
 
-func (s *APIServer) ServeSummary(w http.ResponseWriter, r *http.Request) {
-	s.Mutex.RLock()
-	defer s.Mutex.RUnlock()
+func (s *APIServer) UpdateSummary(update APISummary) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	RequestHandler(w, s.Summary)
+	s.summary = update
 }
