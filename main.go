@@ -29,17 +29,77 @@ import (
 
 	"doumor/metr1c/rac"
 
-	// prometheus exporter
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
+	query.Command = cmd
+	query.SubCommand = subcmd
+	query.Option = option
+
+	err := query.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = query.Parse()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return query
+}
+
+func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
+	var active, hibernated int
+	for _, session := range sessions.Records {
+		switch session["hibernate"] {
+		case "no":
+			active++
+		case "yes":
+			hibernated++
+		default:
+			log.Printf("'rac session list': unexpected 'hibernate' field value: '%s'", session["hibernate"])
+		}
+	}
+
+	return float64(active), float64(hibernated)
+}
+
+func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
+	var soft, hasp int
+	for _, license := range licenses.Records {
+		switch license["license-type"] {
+		case "soft":
+			soft++
+		case "HASP":
+			hasp++
+		default:
+			log.Printf("'rac session list --licenses': unexpected 'license-type' field value: '%s'", license["license-type"])
+		}
+	}
+
+	return float64(soft), float64(hasp)
+}
+
+func countTotalProcMem(processes rac.RACQuery) (float64, error) {
+	var total int
+	for _, process := range processes.Records {
+		memory, err := strconv.Atoi(process["memory-size"])
+		if err != nil {
+			return 0, fmt.Errorf("parsing process 'memory-size': %w", err)
+		}
+		total += memory
+	}
+
+	return float64(total), nil
+}
+
 func recordMetrics() {
 	// see in "rac" help
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
-
-	// 07593cfe-64c2-4656-be5f-61c3226286d5
 
 	// There are configurations without an administrator, but
 	// this is insecure and metr1c only works with configurations
@@ -58,145 +118,51 @@ func recordMetrics() {
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
+	baseQuery := rac.RACQuery{
+		ExecPath: execPath,
+		Cluster:  cluster,
+		User:     adminusr,
+		Password: adminpass,
+	}
+
 	go func() {
 		for {
-			// ! rac session list
-			// Examine current 1C session info
-			sessions := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "session",
-				SubCommand: "list",
-				Option:     "",
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
-			// Get output from a rac session list query
-			err := sessions.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
+			// Sessions
+			sessions := getRecords(baseQuery, "session", "list", "")
 
-			err = sessions.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Count current 1C sessions
 			sessionCount.Set(float64(sessions.CountRecords()))
 
-			var activeSessions, hibernatedSessions int = 0, 0
+			active, hibernated := countSessionTypes(sessions)
+			activeSessionCount.Set(active)
+			hibernatedSessionCount.Set(hibernated)
 
-			for _, session := range sessions.Records {
-				switch session["hibernate"] {
-					case "no": activeSessions++
-					case "yes" : hibernatedSessions++
-					default : log.Println("'rac session list' hibernate unexpected field value")
-				}
-			}
+			// Session licenses
+			sessionsLicenses := getRecords(baseQuery, "session", "list", `--licenses`)
+			soft, hasp := countLicenseTypes(sessionsLicenses)
+			softLicensesCount.Set(soft)
+			haspLicensesCount.Set(hasp)
 
-			activeSessionCount.Set(float64(activeSessions))
-			hibernatedSessionCount.Set(float64(hibernatedSessions))
+			// Connections
+			connections := getRecords(baseQuery, "connection", "list", "")
+			connectionCount.Set(float64(connections.CountRecords()))
 
-			// ! rac session list --licenses
-			// Examine the current 1C session information in terms of licenses
-			sessionsLicenses := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "session",
-				SubCommand: "list",
-				Option:     `--licenses`,
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
-
-			err = sessionsLicenses.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			err = sessionsLicenses.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			var softLicenses, haspLicenses int = 0, 0
-
-			// Count field "license-type" for soft and hasp licenses
-			for _, sessionLicense := range sessionsLicenses.Records {
-				switch sessionLicense["license-type"] {
-					case "soft": softLicenses++
-					case "HASP": haspLicenses++
-                                        default : log.Println("'rac session list --licenses' license-type unexpected field value")
-				}
-			}
-
-			softLicensesCount.Set(float64(softLicenses))
-			haspLicensesCount.Set(float64(haspLicenses))
-
-
-			connections := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "connection",
-				SubCommand: "list",
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
-
-			err = connections.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = connections.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			connectionCount.Set(float64(sessions.CountRecords()))
-
-
-			processes := rac.RACQuery{
-				ExecPath:   execPath,
-				Command:    "process",
-				SubCommand: "list",
-				Cluster:    cluster,
-				User:       adminusr,
-				Password:   adminpass,
-			}
-			// Get output from a rac process list query
-			err = processes.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = processes.Parse()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Count current 1C processes
+			// Processes
+			processes := getRecords(baseQuery, "process", "list", "")
 			processCount.Set(float64(processes.CountRecords()))
 
-			var procMem int = 0
-			for _, process := range processes.Records {
-				memory, err := strconv.Atoi(process["memory-size"])
-				if err != nil {
-					log.Fatal(err)
-				}
-				procMem += memory
+			memory, err := countTotalProcMem(processes)
+			if err != nil {
+				log.Println(err)
 			}
-
-			// Count total memory used by all processes
-			processMemTotal.Set(float64(procMem))
+			processMemTotal.Set(memory)
 
 			// Set a timeout before the next metrics gathering
-			time.Sleep(60 * time.Second) // 1 min
+			time.Sleep(60 * time.Second)
 		}
 	}()
 }
 
 var (
-	// session list
 	sessionCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_sessions_count",
 		Help: "The total number of 1c user sessions",
@@ -212,7 +178,6 @@ var (
 		Help: "The total number of 1c user hybernated sessions",
 	})
 
-	// session list --licenses
 	softLicensesCount = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "platform1c_soft_licenses_count",
 		Help: "The total number of 1c user used soft licenses",
