@@ -158,13 +158,13 @@ func recordMetrics(server *api.APIServer) {
 
 			server.UpdateSummary(api.APISummary{
 				SessionCount:       sessions.CountRecords(),
-				SessionsActive:     active,
-				SessionsHybernated: hibernated,
-				UsedLicensesSoft:   soft,
-				UsedLicensesHASP:   hasp,
+				SessionsActive:     int(active),
+				SessionsHybernated: int(hibernated),
+				UsedLicensesSoft:   int(soft),
+				UsedLicensesHASP:   int(hasp),
 				ConnectionCount:    connections.CountRecords(),
 				ProcessCount:       processes.CountRecords(),
-				ProcessesMemoryKB:  memory,
+				ProcessesMemoryKB:  int(memory),
 			})
 
 			log.Printf("%#v", server)
