@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"sync"
 )
@@ -20,7 +21,10 @@ type APISummary struct {
 
 func requestHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		log.Printf("api error: encoding data to JSON: %s", err)
+	}
 }
 
 type APIServer struct {
