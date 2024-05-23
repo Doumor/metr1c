@@ -24,8 +24,9 @@ func requestHandler(w http.ResponseWriter, data interface{}) {
 }
 
 type APIServer struct {
-	mutex   sync.RWMutex
-	summary APISummary
+	mutex    sync.RWMutex
+	summary  APISummary
+	sessions []map[string]string
 }
 
 func NewAPIServer() *APIServer {
@@ -44,4 +45,18 @@ func (s *APIServer) UpdateSummary(update APISummary) {
 	defer s.mutex.Unlock()
 
 	s.summary = update
+}
+
+func (s *APIServer) ServeSessions(w http.ResponseWriter, r *http.Request) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	requestHandler(w, s.sessions)
+}
+
+func (s *APIServer) UpdateSessions(update []map[string]string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.sessions = update
 }
