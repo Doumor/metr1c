@@ -169,6 +169,7 @@ func recordMetrics(server *api.APIServer) {
 
 			server.UpdateSessions(sessions.Records)
 			server.UpdateConnections(connections.Records)
+			server.UpdateProcesses(processes.Records)
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
@@ -243,6 +244,7 @@ func main() {
 	http.Handle("/api/summary", http.HandlerFunc(server.ServeSummary))
 	http.Handle("/api/sessions", http.HandlerFunc(server.ServeSessions))
 	http.Handle("/api/connections", http.HandlerFunc(server.ServeConnections))
+	http.Handle("/api/processes", http.HandlerFunc(server.ServeProcesses))
 
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
 
