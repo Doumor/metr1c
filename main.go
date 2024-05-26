@@ -105,6 +105,18 @@ func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
 	return infoName
 }
 
+func countActiveSessInfobase(sessions rac.RACQuery) map[string]float64 {
+	sessBase := make(map[string][]string)
+	for _, session := range sessions.Records {
+		sessBase[session["infobase"]] = append(sessBase[session["infobase"]], session["session"])
+	}
+	countSessBase := make(map[string]float64)
+	for k, v := range sessBase {
+		countSessBase[k] = float64(len(v))
+	}
+	return countSessBase
+}
+
 func recordMetrics() {
 	// see in "rac" help
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
