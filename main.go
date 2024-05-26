@@ -97,6 +97,14 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 	return float64(total), nil
 }
 
+func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
+	infoName := make(map[string]string)
+	for _, infobase := range infobases.Records {
+		infoName[infobase["infobase"]] = infobase["name"]
+	}
+	return infoName
+}
+
 func recordMetrics() {
 	// see in "rac" help
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
@@ -156,6 +164,14 @@ func recordMetrics() {
 			}
 			processMemTotal.Set(memory)
 
+			prometheus.MustRegister(activeSessPerInfobase)
+
+			//Infobases
+			infobases := getRecords(baseQuery, "infobase", "summary", "list")
+			for k, v := range createInfobaseNameMap(infobases) {
+				activeSessPerInfobase.WithLabelValues(k, v).Set(0.9)
+			}
+
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
 		}
@@ -202,6 +218,12 @@ var (
 		Name: "platform1c_processes_total_memory_kbytes",
 		Help: "The total number of used memory by all processes (KB)",
 	})
+
+	activeSessPerInfobase = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "activeSessPerInfobase",
+		Help: "The number of active sessions for infobase"},
+		// The two label names by which to split the metric.
+		[]string{"InfobaseUuid", "InfobaseName"})
 )
 
 func main() {
