@@ -185,7 +185,7 @@ func recordMetrics() {
 			for k, v1 := range createInfobaseNameMap(infobases) {
 				if v2, ok := sessCountBases[k]; ok {
 					activeSessPerInfobase.WithLabelValues(k, v1).Set(v2)
-				} else if _, ok := sessCountBases[k]; !ok {
+				} else {
 					activeSessPerInfobase.WithLabelValues(k, v1).Set(0)
 				}
 			}
