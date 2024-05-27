@@ -240,7 +240,7 @@ var (
 
 	activeSessPerInfobase = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "platform1c_session_count_per_infobase",
-		Help: "The number of active sessions for infobase"},
+		Help: "The number of active sessions for each infobase"},
 		// The two label names by which to split the metric.
 		[]string{"InfobaseUuid", "InfobaseName"})
 )
