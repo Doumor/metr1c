@@ -185,6 +185,8 @@ func recordMetrics() {
 			for k, v1 := range createInfobaseNameMap(infobases) {
 				if v2, ok := sessCountBases[k]; ok {
 					activeSessPerInfobase.WithLabelValues(k, v1).Set(v2)
+				} else if _, ok := sessCountBases[k]; !ok {
+					activeSessPerInfobase.WithLabelValues(k, v1).Set(0)
 				}
 			}
 			//activeSessPerInfobase{InfobaseName="zup",InfobaseUuid="f2bad9ba-3461-4d7a-96a2-0c05bce92369"} 1
@@ -237,7 +239,7 @@ var (
 	})
 
 	activeSessPerInfobase = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "activeSessPerInfobase",
+		Name: "platform1c_session_count_per_infobase",
 		Help: "The number of active sessions for infobase"},
 		// The two label names by which to split the metric.
 		[]string{"InfobaseUuid", "InfobaseName"})
