@@ -105,6 +105,8 @@ func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
 	return infoName
 }
 
+//{"zup":"f2bad9ba-3461-4d7a-96a2-0c05bce92369"}
+
 func countActiveSessInfobase(sessions rac.RACQuery) map[string]float64 {
 	sessBase := make(map[string][]string)
 	for _, session := range sessions.Records {
@@ -176,13 +178,16 @@ func recordMetrics() {
 			}
 			processMemTotal.Set(memory)
 
-			prometheus.MustRegister(activeSessPerInfobase)
-
 			//Infobases
+			prometheus.MustRegister(activeSessPerInfobase)
 			infobases := getRecords(baseQuery, "infobase", "summary", "list")
-			for k, v := range createInfobaseNameMap(infobases) {
-				activeSessPerInfobase.WithLabelValues(k, v).Set(0.9)
+			map2 := countActiveSessInfobase(sessions)
+			for k, v1 := range createInfobaseNameMap(infobases) {
+				if v2, ok := map2[k]; ok {
+					activeSessPerInfobase.WithLabelValues(k, v1).Set(v2)
+				}
 			}
+			//activeSessPerInfobase{InfobaseName="zup",InfobaseUuid="f2bad9ba-3461-4d7a-96a2-0c05bce92369"} 0.9
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
