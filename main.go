@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"time"
 
+	"doumor/metr1c/api"
 	"doumor/metr1c/rac"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -97,8 +98,7 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 	return float64(total), nil
 }
 
-func recordMetrics() {
-	// see in "rac" help
+func recordMetrics(server *api.APIServer) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
 	// There are configurations without an administrator, but
@@ -155,6 +155,21 @@ func recordMetrics() {
 				log.Println(err)
 			}
 			processMemTotal.Set(memory)
+
+			server.UpdateSummary(api.APISummary{
+				SessionCount:       sessions.CountRecords(),
+				SessionsActive:     int(active),
+				SessionsHybernated: int(hibernated),
+				UsedLicensesSoft:   int(soft),
+				UsedLicensesHASP:   int(hasp),
+				ConnectionCount:    connections.CountRecords(),
+				ProcessCount:       processes.CountRecords(),
+				ProcessesMemoryKB:  int(memory),
+			})
+
+			server.UpdateSessions(sessions.Records)
+			server.UpdateConnections(connections.Records)
+			server.UpdateProcesses(processes.Records)
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
@@ -222,9 +237,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	recordMetrics()
+	server := api.NewAPIServer()
+	recordMetrics(server)
 
 	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/api/summary", http.HandlerFunc(server.ServeSummary))
+	http.Handle("/api/sessions", http.HandlerFunc(server.ServeSessions))
+	http.Handle("/api/connections", http.HandlerFunc(server.ServeConnections))
+	http.Handle("/api/processes", http.HandlerFunc(server.ServeProcesses))
 
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
 
