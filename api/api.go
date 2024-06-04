@@ -53,7 +53,7 @@ func (s *APIServer) UpdateSummary(update APISummary) {
 	s.summary = update
 }
 
-func (s *APIServer) ServeSessions(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) ServeSessions(w http.ResponseWriter, _ *http.Request) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -67,7 +67,7 @@ func (s *APIServer) UpdateSessions(update []map[string]string) {
 	s.sessions = update
 }
 
-func (s *APIServer) ServeConnections(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) ServeConnections(w http.ResponseWriter, _ *http.Request) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -81,7 +81,7 @@ func (s *APIServer) UpdateConnections(update []map[string]string) {
 	s.connections = update
 }
 
-func (s *APIServer) ServeProcesses(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) ServeProcesses(w http.ResponseWriter, _ *http.Request) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 

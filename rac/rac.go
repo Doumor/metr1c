@@ -73,7 +73,7 @@ func (q *RACQuery) Run() error {
 	if err != nil {
 		return fmt.Errorf("error running a '%s %s %s' command (%w): %s", q.Command, q.SubCommand, q.Option, err, stderr.String())
 	}
-	q.Output = string(stdout.String())
+	q.Output = stdout.String()
 
 	return nil
 }
@@ -88,8 +88,6 @@ func (q *RACQuery) Parse() error {
 	if len(blocks[0]) == 0 {
 		return nil
 	}
-	// Debug
-	//fmt.Println(blocks)
 
 	for bindx, block := range blocks {
 		record := map[string]string{}
