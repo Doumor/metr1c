@@ -39,7 +39,7 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-func (s *Server) ServeSummary(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeSummary(w http.ResponseWriter, _ *http.Request) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
