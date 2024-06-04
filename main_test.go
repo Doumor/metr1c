@@ -6,7 +6,7 @@ import (
 )
 
 func TestCountSessionTypesSingleType(t *testing.T) {
-	sessions := rac.RACQuery{}
+	sessions := rac.Query{}
 	sessions.Output = `session                          : 8de713f9-0f21-408f-98ec-0edb40a6acbc
 session-id                       : 1
 infobase                         : f2bad9ba-3461-4d7a-96a2-0c05bce92369
@@ -29,7 +29,7 @@ hibernate                        : no`
 }
 
 func TestCountSessionTypesMultipleTypes(t *testing.T) {
-	sessions := rac.RACQuery{}
+	sessions := rac.Query{}
 	sessions.Output = `session                          : 8de713f9-0f21-408f-98ec-0edb40a6acbc
 session-id                       : 1
 infobase                         : f2bad9ba-3461-4d7a-96a2-0c05bce92369
@@ -61,7 +61,7 @@ hibernate                        : yes`
 }
 
 func TestCountLicenseTypesSingleLicense(t *testing.T) {
-	licenses := rac.RACQuery{}
+	licenses := rac.Query{}
 	licenses.Output = `session            : 8de713f9-0f21-408f-98ec-0edb40a6acbc
 user-name          : Администратор
 app-id             : WebClient
@@ -82,7 +82,7 @@ license-type       : soft`
 }
 
 func TestCountLicenseTypesMultipleLicenseTypes(t *testing.T) {
-	licenses := rac.RACQuery{}
+	licenses := rac.Query{}
 	licenses.Output = `session            : 8de713f9-0f21-408f-98ec-0edb40a6acbc
 user-name          : Администратор
 app-id             : WebClient
@@ -108,7 +108,7 @@ license-type       : HASP`
 }
 
 func TestCountTotalProcMemSingleProc(t *testing.T) {
-	processes := rac.RACQuery{}
+	processes := rac.Query{}
 	processes.Output = `process              : 7f21962e-3269-4c88-9c72-a6aa9d15edda
 host                 : genlab-1c-test
 port                 : 1560
@@ -132,7 +132,7 @@ memory-size          : 1024`
 }
 
 func TestCountTotalProcMemMultiplePocs(t *testing.T) {
-	processes := rac.RACQuery{}
+	processes := rac.Query{}
 	processes.Output = `process              : 7f21962e-3269-4c88-9c72-a6aa9d15edda
 host                 : genlab-1c-test
 port                 : 1560
