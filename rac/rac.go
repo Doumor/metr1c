@@ -60,11 +60,11 @@ type RACQuery struct {
 // Run a query against the `rac` tool
 func (q *RACQuery) Run() error {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Option, q.Cluster, q.User, q.Password)
+	cmd := exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Option, q.Cluster, q.User, q.Password) //#nosec G204
 
 	// Cannot pass empty arg
 	if q.Option == "" {
-		cmd = exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Cluster, q.User, q.Password)
+		cmd = exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Cluster, q.User, q.Password) //#nosec G204
 	}
 
 	cmd.Stdout = &stdout
