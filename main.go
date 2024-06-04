@@ -35,7 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
+func getRecords(query rac.Query, cmd, subcmd, option string) rac.Query {
 	query.Command = cmd
 	query.SubCommand = subcmd
 	query.Option = option
@@ -53,7 +53,7 @@ func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
 	return query
 }
 
-func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
+func countSessionTypes(sessions rac.Query) (float64, float64) {
 	var active, hibernated int
 	for _, session := range sessions.Records {
 		switch session["hibernate"] {
@@ -69,7 +69,7 @@ func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
 	return float64(active), float64(hibernated)
 }
 
-func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
+func countLicenseTypes(licenses rac.Query) (float64, float64) {
 	var soft, hasp int
 	for _, license := range licenses.Records {
 		switch license["license-type"] {
@@ -85,7 +85,7 @@ func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
 	return float64(soft), float64(hasp)
 }
 
-func countTotalProcMem(processes rac.RACQuery) (float64, error) {
+func countTotalProcMem(processes rac.Query) (float64, error) {
 	var total int
 	for _, process := range processes.Records {
 		memory, err := strconv.Atoi(process["memory-size"])
@@ -118,7 +118,7 @@ func recordMetrics(server *api.Server) {
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
-	baseQuery := rac.RACQuery{
+	baseQuery := rac.Query{
 		ExecPath: execPath,
 		Cluster:  cluster,
 		User:     adminusr,
