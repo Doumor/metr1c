@@ -98,7 +98,7 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 	return float64(total), nil
 }
 
-func recordMetrics(server *api.APIServer) {
+func recordMetrics(server *api.Server) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
 	// There are configurations without an administrator, but
@@ -156,7 +156,7 @@ func recordMetrics(server *api.APIServer) {
 			}
 			processMemTotal.Set(memory)
 
-			server.UpdateSummary(api.APISummary{
+			server.UpdateSummary(api.Summary{
 				SessionCount:       sessions.CountRecords(),
 				SessionsActive:     int(active),
 				SessionsHybernated: int(hibernated),
@@ -237,7 +237,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	apiServer := api.NewAPIServer()
+	apiServer := api.NewServer()
 	recordMetrics(apiServer)
 
 	http.Handle("/metrics", promhttp.Handler())
@@ -247,10 +247,10 @@ func main() {
 	http.Handle("/api/processes", http.HandlerFunc(apiServer.ServeProcesses))
 
 	httpServer := &http.Server{
-		Addr:           fmt.Sprintf(":%s", os.Getenv("metr1c_port")),
-		ReadTimeout:    15 * time.Second,
-		WriteTimeout:   15 * time.Second,
+		Addr:         fmt.Sprintf(":%s", os.Getenv("metr1c_port")),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
 	}
-	
+
 	log.Fatal(httpServer.ListenAndServe())
 }
