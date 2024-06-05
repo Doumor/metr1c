@@ -35,6 +35,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+var Version string
+
 func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
 	query.Command = cmd
 	query.SubCommand = subcmd
@@ -233,7 +235,7 @@ func main() {
 	}
 
 	if version {
-		fmt.Printf("v0.1.0\n")
+		fmt.Printf(Version)
 		os.Exit(0)
 	}
 
