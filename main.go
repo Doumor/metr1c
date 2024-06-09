@@ -235,7 +235,7 @@ func main() {
 	}
 
 	if version {
-		fmt.Printf(Version)
+		fmt.Printf("%s", Version)
 		os.Exit(0)
 	}
 
