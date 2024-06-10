@@ -98,6 +98,15 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 	return float64(total), nil
 }
 
+func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
+	infoName := make(map[string]string)
+	for _, infobase := range infobases.Records {
+		infoName[infobase["infobase"]] = infobase["name"]
+	}
+
+	return infoName
+}
+
 func recordMetrics(server *api.APIServer) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
