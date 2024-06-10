@@ -107,6 +107,19 @@ func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
 	return infoName
 }
 
+func countInfobaseByLicenses(licenses rac.RACQuery) map[string]float64 {
+	mapLicenseBase := make(map[string][]string)
+	for _, license := range licenses.Records {
+		mapLicenseBase[license["infobase"]] = append(mapLicenseBase[license["infobase"]], license["session"])
+	}
+	countLicenseBase := make(map[string]float64)
+	for k, v := range mapLicenseBase {
+		countLicenseBase[k] = float64(len(v))
+	}
+
+	return countLicenseBase
+}
+
 func recordMetrics(server *api.APIServer) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
