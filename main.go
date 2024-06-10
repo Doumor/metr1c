@@ -239,6 +239,12 @@ var (
 		Name: "platform1c_processes_total_memory_kbytes",
 		Help: "The total number of used memory by all processes (KB)",
 	})
+
+	licensesPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "platform1c_license_count_per_infobase",
+		Help: "The number of licenses for infobase"},
+		// The two label names by which to split the metric.
+		[]string{"InfobaseUuid", "InfobaseName"})
 )
 
 func main() {
