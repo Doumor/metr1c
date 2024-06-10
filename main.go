@@ -178,6 +178,17 @@ func recordMetrics(server *api.APIServer) {
 			}
 			processMemTotal.Set(memory)
 
+			// Infobases
+			infobases := getRecords(baseQuery, "infobase", "summary", "list")
+			sessCountBases := countInfobaseByLicenses(sessionsLicenses)
+			for k, v1 := range createInfobaseNameMap(infobases) {
+				if v2, ok := sessCountBases[k]; ok {
+					licensesPerInfobase.WithLabelValues(k, v1).Set(v2)
+				} else {
+					licensesPerInfobase.WithLabelValues(k, v1).Set(0)
+				}
+			}
+
 			server.UpdateSummary(api.APISummary{
 				SessionCount:       sessions.CountRecords(),
 				SessionsActive:     int(active),
