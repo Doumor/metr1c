@@ -13,7 +13,7 @@ metr1c :
 	@CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -v \
 	-ldflags "-X main.Version=${VERSION} -s -w" .
 
-tar : metr1c
+tar : clean metr1c
 	tar -v -czf metr1c.tar.gz metr1c metr1c.service
 	rm -v metr1c
 
