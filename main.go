@@ -285,6 +285,7 @@ func main() {
 	http.Handle("/api/sessions", http.HandlerFunc(server.ServeSessions))
 	http.Handle("/api/connections", http.HandlerFunc(server.ServeConnections))
 	http.Handle("/api/processes", http.HandlerFunc(server.ServeProcesses))
+	http.Handle("/api/infobases", http.HandlerFunc(server.ServeInfobases))
 
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
 

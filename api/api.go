@@ -108,5 +108,5 @@ func (s *APIServer) UpdateInfobases(update []map[string]string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.processes = update
+	s.infobases = update
 }
