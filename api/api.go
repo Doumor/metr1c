@@ -33,6 +33,7 @@ type APIServer struct {
 	sessions    []map[string]string
 	connections []map[string]string
 	processes   []map[string]string
+	infobases   []map[string]string
 }
 
 func NewAPIServer() *APIServer {
@@ -89,6 +90,21 @@ func (s *APIServer) ServeProcesses(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) UpdateProcesses(update []map[string]string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.processes = update
+}
+
+// Infobases
+func (s *APIServer) ServeInfobases(w http.ResponseWriter, r *http.Request) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	requestHandler(w, s.infobases)
+}
+
+func (s *APIServer) UpdateInfobases(update []map[string]string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 

@@ -203,6 +203,7 @@ func recordMetrics(server *api.APIServer) {
 			server.UpdateSessions(sessions.Records)
 			server.UpdateConnections(connections.Records)
 			server.UpdateProcesses(processes.Records)
+			server.UpdateInfobases(infobases.Records)
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
