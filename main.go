@@ -100,6 +100,28 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 	return float64(total), nil
 }
 
+func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
+	infoName := make(map[string]string)
+	for _, infobase := range infobases.Records {
+		infoName[infobase["infobase"]] = infobase["name"]
+	}
+
+	return infoName
+}
+
+func countInfobaseByLicenses(licenses rac.RACQuery) map[string]float64 {
+	mapLicenseBase := make(map[string][]string)
+	for _, license := range licenses.Records {
+		mapLicenseBase[license["infobase"]] = append(mapLicenseBase[license["infobase"]], license["session"])
+	}
+	countLicenseBase := make(map[string]float64)
+	for k, v := range mapLicenseBase {
+		countLicenseBase[k] = float64(len(v))
+	}
+
+	return countLicenseBase
+}
+
 func recordMetrics(server *api.APIServer) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
@@ -158,6 +180,17 @@ func recordMetrics(server *api.APIServer) {
 			}
 			processMemTotal.Set(memory)
 
+			// Infobases
+			infobases := getRecords(baseQuery, "infobase", "summary", "list")
+			sessCountBases := countInfobaseByLicenses(sessionsLicenses)
+			for k, v1 := range createInfobaseNameMap(infobases) {
+				if v2, ok := sessCountBases[k]; ok {
+					licensesPerInfobase.WithLabelValues(k, v1).Set(v2)
+				} else {
+					licensesPerInfobase.WithLabelValues(k, v1).Set(0)
+				}
+			}
+
 			server.UpdateSummary(api.APISummary{
 				SessionCount:       sessions.CountRecords(),
 				SessionsActive:     int(active),
@@ -172,6 +205,7 @@ func recordMetrics(server *api.APIServer) {
 			server.UpdateSessions(sessions.Records)
 			server.UpdateConnections(connections.Records)
 			server.UpdateProcesses(processes.Records)
+			server.UpdateInfobases(infobases.Records)
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
@@ -219,6 +253,12 @@ var (
 		Name: "platform1c_processes_total_memory_kbytes",
 		Help: "The total number of used memory by all processes (KB)",
 	})
+
+	licensesPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "platform1c_license_count_per_infobase",
+		Help: "The number of licenses for infobase"},
+		// The two label names by which to split the metric.
+		[]string{"InfobaseUuid", "InfobaseName"})
 )
 
 func main() {
@@ -247,6 +287,7 @@ func main() {
 	http.Handle("/api/sessions", http.HandlerFunc(server.ServeSessions))
 	http.Handle("/api/connections", http.HandlerFunc(server.ServeConnections))
 	http.Handle("/api/processes", http.HandlerFunc(server.ServeProcesses))
+	http.Handle("/api/infobases", http.HandlerFunc(server.ServeInfobases))
 
 	port := ":" + os.Getenv("metr1c_port") // Example: 1599
 
