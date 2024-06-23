@@ -100,6 +100,28 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 	return float64(total), nil
 }
 
+func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
+	baseUuidToName := make(map[string]string)
+	for _, record := range infobases.Records {
+		baseUuidToName[record["infobase"]] = record["name"]
+	}
+
+	return baseUuidToName
+}
+
+func countLicensesByInfobase(licenses rac.RACQuery) map[string]float64 {
+	mapLicenseUuidToBase := make(map[string][]string)
+	for _, record := range licenses.Records {
+		mapLicenseUuidToBase[record["infobase"]] = append(mapLicenseUuidToBase[record["infobase"]], record["session"])
+	}
+	numLicenseByBase := make(map[string]float64)
+	for baseUuid, licenseUuid := range mapLicenseUuidToBase {
+		numLicenseByBase[baseUuid] = float64(len(licenseUuid))
+	}
+
+	return numLicenseByBase
+}
+
 func recordMetrics(server *api.APIServer) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
@@ -157,6 +179,17 @@ func recordMetrics(server *api.APIServer) {
 				log.Println(err)
 			}
 			processMemTotal.Set(memory)
+
+			// Infobases
+			infobases := getRecords(baseQuery, "infobase", "summary", "list")
+			numLicensesByBase := countLicensesByInfobase(sessionsLicenses)
+			for baseUuid, baseName := range createInfobaseNameMap(infobases) {
+				if numLicenses, ok := numLicensesByBase[baseUuid]; ok {
+					licensesPerInfobase.WithLabelValues(baseUuid, baseName).Set(numLicenses)
+				} else {
+					licensesPerInfobase.WithLabelValues(baseUuid, baseName).Set(0)
+				}
+			}
 
 			server.UpdateSummary(api.APISummary{
 				SessionCount:       sessions.CountRecords(),
@@ -219,6 +252,12 @@ var (
 		Name: "platform1c_processes_total_memory_kbytes",
 		Help: "The total number of used memory by all processes (KB)",
 	})
+
+	licensesPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "platform1c_license_count_per_infobase",
+		Help: "The number of licenses for infobase"},
+		// The two label names by which to split the metric.
+		[]string{"InfobaseUuid", "InfobaseName"})
 )
 
 func main() {
