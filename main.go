@@ -99,25 +99,25 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 }
 
 func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
-	infoName := make(map[string]string)
-	for _, infobase := range infobases.Records {
-		infoName[infobase["infobase"]] = infobase["name"]
+	baseUuidToName := make(map[string]string)
+	for _, record := range infobases.Records {
+		baseUuidToName[record["infobase"]] = record["name"]
 	}
 
-	return infoName
+	return baseUuidToName
 }
 
-func countInfobaseByLicenses(licenses rac.RACQuery) map[string]float64 {
-	mapLicenseBase := make(map[string][]string)
-	for _, license := range licenses.Records {
-		mapLicenseBase[license["infobase"]] = append(mapLicenseBase[license["infobase"]], license["session"])
+func countLicensesByInfobase(licenses rac.RACQuery) map[string]float64 {
+	mapLicenseUuidToBase := make(map[string][]string)
+	for _, record := range licenses.Records {
+		mapLicenseUuidToBase[record["infobase"]] = append(mapLicenseUuidToBase[record["infobase"]], record["session"])
 	}
-	countLicenseBase := make(map[string]float64)
-	for k, v := range mapLicenseBase {
-		countLicenseBase[k] = float64(len(v))
+	numLicenseByBase := make(map[string]float64)
+	for baseUuid, licenseUuid := range mapLicenseUuidToBase {
+		numLicenseByBase[baseUuid] = float64(len(licenseUuid))
 	}
 
-	return countLicenseBase
+	return numLicenseByBase
 }
 
 func recordMetrics(server *api.APIServer) {
@@ -180,12 +180,12 @@ func recordMetrics(server *api.APIServer) {
 
 			// Infobases
 			infobases := getRecords(baseQuery, "infobase", "summary", "list")
-			sessCountBases := countInfobaseByLicenses(sessionsLicenses)
-			for k, v1 := range createInfobaseNameMap(infobases) {
-				if v2, ok := sessCountBases[k]; ok {
-					licensesPerInfobase.WithLabelValues(k, v1).Set(v2)
+			numLicensesByBase := countLicensesByInfobase(sessionsLicenses)
+			for baseUuid, baseName := range createInfobaseNameMap(infobases) {
+				if numLicenses, ok := numLicensesByBase[baseUuid]; ok {
+					licensesPerInfobase.WithLabelValues(baseUuid, baseName).Set(numLicenses)
 				} else {
-					licensesPerInfobase.WithLabelValues(k, v1).Set(0)
+					licensesPerInfobase.WithLabelValues(baseUuid, baseName).Set(0)
 				}
 			}
 
