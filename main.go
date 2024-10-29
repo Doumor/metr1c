@@ -107,17 +107,19 @@ func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
 	return baseUuidToName
 }
 
-func countLicensesByInfobase(licenses rac.RACQuery) map[string]float64 {
-	mapLicenseUuidToBase := make(map[string][]string)
-	for _, record := range licenses.Records {
-		mapLicenseUuidToBase[record["infobase"]] = append(mapLicenseUuidToBase[record["infobase"]], record["session"])
+func countSessionsByInfobase(sessions rac.RACQuery) map[string]float64 {
+	mapSessionUuidToBase := make(map[string][]string)
+	for _, record := range sessions.Records {
+		if record["hibernate"] == "yes" {
+			continue
+		}
+		mapSessionUuidToBase[record["infobase"]] = append(mapSessionUuidToBase[record["infobase"]], record["session"])
 	}
-	numLicenseByBase := make(map[string]float64)
-	for baseUuid, licenseUuid := range mapLicenseUuidToBase {
-		numLicenseByBase[baseUuid] = float64(len(licenseUuid))
+	numSessionByBase := make(map[string]float64)
+	for baseUuid, sessionUuid := range mapSessionUuidToBase {
+		numSessionByBase[baseUuid] = float64(len(sessionUuid))
 	}
-
-	return numLicenseByBase
+	return numSessionByBase
 }
 
 func recordMetrics(server *api.APIServer) {
@@ -180,12 +182,12 @@ func recordMetrics(server *api.APIServer) {
 
 			// Infobases
 			infobases := getRecords(baseQuery, "infobase", "summary", "list")
-			numLicensesByBase := countLicensesByInfobase(sessionsLicenses)
+			numLicensesByBase := countSessionsByInfobase(sessions)
 			for baseUuid, baseName := range createInfobaseNameMap(infobases) {
-				if numLicenses, ok := numLicensesByBase[baseUuid]; ok {
-					licensesPerInfobase.WithLabelValues(baseUuid, baseName).Set(numLicenses)
+				if numSessions, ok := numLicensesByBase[baseUuid]; ok {
+					sessionsPerInfobase.WithLabelValues(baseUuid, baseName).Set(numSessions)
 				} else {
-					licensesPerInfobase.WithLabelValues(baseUuid, baseName).Set(0)
+					sessionsPerInfobase.WithLabelValues(baseUuid, baseName).Set(0)
 				}
 			}
 
@@ -251,9 +253,9 @@ var (
 		Help: "The total number of used memory by all processes (KB)",
 	})
 
-	licensesPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "platform1c_license_count_per_infobase",
-		Help: "The number of licenses for infobase"},
+	sessionsPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "platform1c_session_count_per_infobase",
+		Help: "The number of sessions assigned with infobase"},
 		// The two label names by which to split the metric.
 		[]string{"InfobaseUuid", "InfobaseName"})
 )
