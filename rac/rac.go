@@ -44,8 +44,8 @@ func extractKeyValue(line string) (string, string, error) {
 	return key, value, nil
 }
 
-// RACQuery queries the `rac` tool and parses the output
-type RACQuery struct {
+// Query queries the `rac` tool and parses the output
+type Query struct {
 	ExecPath   string
 	Command    string
 	SubCommand string
@@ -58,13 +58,13 @@ type RACQuery struct {
 }
 
 // Run a query against the `rac` tool
-func (q *RACQuery) Run() error {
+func (q *Query) Run() error {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Option, q.Cluster, q.User, q.Password)
+	cmd := exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Option, q.Cluster, q.User, q.Password) //#nosec G204
 
 	// Cannot pass empty arg
 	if q.Option == "" {
-		cmd = exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Cluster, q.User, q.Password)
+		cmd = exec.Command(q.ExecPath, q.Command, q.SubCommand, q.Cluster, q.User, q.Password) //#nosec G204
 	}
 
 	cmd.Stdout = &stdout
@@ -73,13 +73,13 @@ func (q *RACQuery) Run() error {
 	if err != nil {
 		return fmt.Errorf("error running a '%s %s %s' command (%w): %s", q.Command, q.SubCommand, q.Option, err, stderr.String())
 	}
-	q.Output = string(stdout.String())
+	q.Output = stdout.String()
 
 	return nil
 }
 
 // Parse converts `rac` output lines into a slice of map[string]string records
-func (q *RACQuery) Parse() error {
+func (q *Query) Parse() error {
 	outputCleaned := strings.TrimSpace(q.Output)
 	blocks := strings.Split(outputCleaned, "\n\n")
 
@@ -88,8 +88,6 @@ func (q *RACQuery) Parse() error {
 	if len(blocks[0]) == 0 {
 		return nil
 	}
-	// Debug
-	//fmt.Println(blocks)
 
 	for bindx, block := range blocks {
 		record := map[string]string{}
@@ -109,6 +107,6 @@ func (q *RACQuery) Parse() error {
 }
 
 // CountRecords returns the number of records in the `rac` query
-func (q *RACQuery) CountRecords() int {
+func (q *Query) CountRecords() int {
 	return len(q.Records)
 }

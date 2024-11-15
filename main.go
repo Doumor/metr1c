@@ -37,7 +37,7 @@ import (
 
 var Version string
 
-func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
+func getRecords(query rac.Query, cmd, subcmd, option string) rac.Query {
 	query.Command = cmd
 	query.SubCommand = subcmd
 	query.Option = option
@@ -55,7 +55,7 @@ func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
 	return query
 }
 
-func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
+func countSessionTypes(sessions rac.Query) (float64, float64) {
 	var active, hibernated int
 	for _, session := range sessions.Records {
 		switch session["hibernate"] {
@@ -71,7 +71,7 @@ func countSessionTypes(sessions rac.RACQuery) (float64, float64) {
 	return float64(active), float64(hibernated)
 }
 
-func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
+func countLicenseTypes(licenses rac.Query) (float64, float64) {
 	var soft, hasp int
 	for _, license := range licenses.Records {
 		switch license["license-type"] {
@@ -87,7 +87,7 @@ func countLicenseTypes(licenses rac.RACQuery) (float64, float64) {
 	return float64(soft), float64(hasp)
 }
 
-func countTotalProcMem(processes rac.RACQuery) (float64, error) {
+func countTotalProcMem(processes rac.Query) (float64, error) {
 	var total int
 	for _, process := range processes.Records {
 		memory, err := strconv.Atoi(process["memory-size"])
@@ -100,7 +100,7 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 	return float64(total), nil
 }
 
-func recordMetrics(server *api.APIServer) {
+func recordMetrics(server *api.Server) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
 	// There are configurations without an administrator, but
@@ -120,7 +120,7 @@ func recordMetrics(server *api.APIServer) {
 	// rac accepts password and admin user as argument so any server user
 	// may see it on htop if hidepid equals 0.
 
-	baseQuery := rac.RACQuery{
+	baseQuery := rac.Query{
 		ExecPath: execPath,
 		Cluster:  cluster,
 		User:     adminusr,
@@ -158,7 +158,7 @@ func recordMetrics(server *api.APIServer) {
 			}
 			processMemTotal.Set(memory)
 
-			server.UpdateSummary(api.APISummary{
+			server.UpdateSummary(api.Summary{
 				SessionCount:       sessions.CountRecords(),
 				SessionsActive:     int(active),
 				SessionsHybernated: int(hibernated),
@@ -239,19 +239,20 @@ func main() {
 		os.Exit(0)
 	}
 
-	server := api.NewAPIServer()
-	recordMetrics(server)
+	apiServer := api.NewServer()
+	recordMetrics(apiServer)
 
 	http.Handle("/metrics", promhttp.Handler())
-	http.Handle("/api/summary", http.HandlerFunc(server.ServeSummary))
-	http.Handle("/api/sessions", http.HandlerFunc(server.ServeSessions))
-	http.Handle("/api/connections", http.HandlerFunc(server.ServeConnections))
-	http.Handle("/api/processes", http.HandlerFunc(server.ServeProcesses))
+	http.Handle("/api/summary", http.HandlerFunc(apiServer.ServeSummary))
+	http.Handle("/api/sessions", http.HandlerFunc(apiServer.ServeSessions))
+	http.Handle("/api/connections", http.HandlerFunc(apiServer.ServeConnections))
+	http.Handle("/api/processes", http.HandlerFunc(apiServer.ServeProcesses))
 
-	port := ":" + os.Getenv("metr1c_port") // Example: 1599
-
-	err := http.ListenAndServe(port, nil)
-	if err != nil {
-		log.Fatal(err)
+	httpServer := &http.Server{
+		Addr:         fmt.Sprintf(":%s", os.Getenv("metr1c_port")),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
 	}
+
+	log.Fatal(httpServer.ListenAndServe())
 }
