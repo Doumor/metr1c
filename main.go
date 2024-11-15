@@ -37,7 +37,7 @@ import (
 
 var Version string
 
-func getRecords(query rac.RACQuery, cmd, subcmd, option string) rac.RACQuery {
+func getRecords(query rac.Query, cmd, subcmd, option string) rac.Query {
 	query.Command = cmd
 	query.SubCommand = subcmd
 	query.Option = option
