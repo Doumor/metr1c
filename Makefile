@@ -1,10 +1,19 @@
+TAG=$(shell git describe --abbrev=0 2> /dev/null || echo "0.0.1")
+HASH=$(shell git rev-parse --verify --short HEAD)
+VERSION="${TAG}-${HASH}"
+
 build_dev :
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags="-w" .
+	@printf "building version %s, stripped\n" "${VERSION}"
+	@printf "building version %s, stripped\n" "${VERSION}"
+        @CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -v \
+        -ldflags "-X main.Version=${VERSION} -w" .
 
-build :
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags="-s -w" .
+metr1c :
+	@printf "building version %s, stripped\n" "${VERSION}"
+	@CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -v \
+	-ldflags "-X main.Version=${VERSION} -s -w" .
 
-tar : build
+tar : clean metr1c
 	tar -v -czf metr1c.tar.gz metr1c metr1c.service
 	rm -v metr1c
 
@@ -14,5 +23,5 @@ clean :
 install : build
 	mkdir -v -p /opt/metr1c
 	install -v -m 755 ./metr1c /opt/metr1c/metr1c
-	/usr/bin/install -v -b -S .bak -m 750 -o root -g root ./metr1c.service /etc/systemd/user/
+	/usr/bin/install -v -b -S .bak -m 750 -o root -g root ./metr1c.service /etc/systemd/system/
 	@echo "Now open the /etc/systemd/user/metr1c.service file and edit variables"
