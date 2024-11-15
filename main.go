@@ -101,25 +101,25 @@ func countTotalProcMem(processes rac.Query) (float64, error) {
 }
 
 func createInfobaseNameMap(infobases rac.Query) map[string]string {
-	baseUuidToName := make(map[string]string)
+	baseUUIDToName := make(map[string]string)
 	for _, record := range infobases.Records {
-		baseUuidToName[record["infobase"]] = record["name"]
+		baseUUIDToName[record["infobase"]] = record["name"]
 	}
 
-	return baseUuidToName
+	return baseUUIDToName
 }
 
 func countSessionsByInfobase(sessions rac.Query) map[string]float64 {
-	mapSessionUuidToBase := make(map[string][]string)
+	mapSessionUUIDToBase := make(map[string][]string)
 	for _, record := range sessions.Records {
 		if record["hibernate"] == "yes" {
 			continue
 		}
-		mapSessionUuidToBase[record["infobase"]] = append(mapSessionUuidToBase[record["infobase"]], record["session"])
+		mapSessionUUIDToBase[record["infobase"]] = append(mapSessionUUIDToBase[record["infobase"]], record["session"])
 	}
 	numSessionByBase := make(map[string]float64)
-	for baseUuid, sessionUuid := range mapSessionUuidToBase {
-		numSessionByBase[baseUuid] = float64(len(sessionUuid))
+	for baseUUID, sessionUUID := range mapSessionUUIDToBase {
+		numSessionByBase[baseUUID] = float64(len(sessionUUID))
 	}
 	return numSessionByBase
 }
@@ -185,11 +185,11 @@ func recordMetrics(server *api.Server) {
 			// Infobases
 			infobases := getRecords(baseQuery, "infobase", "summary", "list")
 			numLicensesByBase := countSessionsByInfobase(sessions)
-			for baseUuid, baseName := range createInfobaseNameMap(infobases) {
-				if numSessions, ok := numLicensesByBase[baseUuid]; ok {
-					sessionsPerInfobase.WithLabelValues(baseUuid, baseName).Set(numSessions)
+			for baseUUID, baseName := range createInfobaseNameMap(infobases) {
+				if numSessions, ok := numLicensesByBase[baseUUID]; ok {
+					sessionsPerInfobase.WithLabelValues(baseUUID, baseName).Set(numSessions)
 				} else {
-					sessionsPerInfobase.WithLabelValues(baseUuid, baseName).Set(0)
+					sessionsPerInfobase.WithLabelValues(baseUUID, baseName).Set(0)
 				}
 			}
 
@@ -259,7 +259,7 @@ var (
 		Name: "platform1c_session_count_per_infobase",
 		Help: "The number of sessions assigned with infobase"},
 		// The two label names by which to split the metric.
-		[]string{"InfobaseUuid", "InfobaseName"})
+		[]string{"InfobaseUUID", "InfobaseName"})
 )
 
 func main() {
