@@ -4,7 +4,6 @@ VERSION="${TAG}-${HASH}"
 
 build :
 	@printf "building version %s, stripped\n" "${VERSION}"
-	@printf "building version %s, stripped\n" "${VERSION}"
 	@CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -v \
         -ldflags "-X main.Version=${VERSION} -w" .
 
