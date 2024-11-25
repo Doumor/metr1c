@@ -97,7 +97,7 @@ func (s *Server) UpdateProcesses(update []map[string]string) {
 }
 
 // Infobases
-func (s *Server) ServeInfobases(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeInfobases(w http.ResponseWriter, _ *http.Request) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
