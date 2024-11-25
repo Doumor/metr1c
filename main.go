@@ -100,6 +100,30 @@ func countTotalProcMem(processes rac.Query) (float64, error) {
 	return float64(total), nil
 }
 
+func createInfobaseNameMap(infobases rac.Query) map[string]string {
+	baseUUIDToName := make(map[string]string)
+	for _, record := range infobases.Records {
+		baseUUIDToName[record["infobase"]] = record["name"]
+	}
+
+	return baseUUIDToName
+}
+
+func countSessionsByInfobase(sessions rac.Query) map[string]float64 {
+	mapSessionUUIDToBase := make(map[string][]string)
+	for _, record := range sessions.Records {
+		if record["hibernate"] == "yes" {
+			continue
+		}
+		mapSessionUUIDToBase[record["infobase"]] = append(mapSessionUUIDToBase[record["infobase"]], record["session"])
+	}
+	numSessionByBase := make(map[string]float64)
+	for baseUUID, sessionUUID := range mapSessionUUIDToBase {
+		numSessionByBase[baseUUID] = float64(len(sessionUUID))
+	}
+	return numSessionByBase
+}
+
 func recordMetrics(server *api.Server) {
 	cluster := "--cluster=" + os.Getenv("platform1c_admin_cluster")
 
@@ -158,6 +182,17 @@ func recordMetrics(server *api.Server) {
 			}
 			processMemTotal.Set(memory)
 
+			// Infobases
+			infobases := getRecords(baseQuery, "infobase", "summary", "list")
+			numLicensesByBase := countSessionsByInfobase(sessions)
+			for baseUUID, baseName := range createInfobaseNameMap(infobases) {
+				if numSessions, ok := numLicensesByBase[baseUUID]; ok {
+					sessionsPerInfobase.WithLabelValues(baseUUID, baseName).Set(numSessions)
+				} else {
+					sessionsPerInfobase.WithLabelValues(baseUUID, baseName).Set(0)
+				}
+			}
+
 			server.UpdateSummary(api.Summary{
 				SessionCount:       sessions.CountRecords(),
 				SessionsActive:     int(active),
@@ -172,6 +207,7 @@ func recordMetrics(server *api.Server) {
 			server.UpdateSessions(sessions.Records)
 			server.UpdateConnections(connections.Records)
 			server.UpdateProcesses(processes.Records)
+			server.UpdateInfobases(infobases.Records)
 
 			// Set a timeout before the next metrics gathering
 			time.Sleep(60 * time.Second)
@@ -219,6 +255,12 @@ var (
 		Name: "platform1c_processes_total_memory_kbytes",
 		Help: "The total number of used memory by all processes (KB)",
 	})
+
+	sessionsPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "platform1c_session_count_per_infobase",
+		Help: "The number of sessions assigned with infobase"},
+		// The two label names by which to split the metric.
+		[]string{"InfobaseUUID", "InfobaseName"})
 )
 
 func main() {
@@ -247,6 +289,7 @@ func main() {
 	http.Handle("/api/sessions", http.HandlerFunc(apiServer.ServeSessions))
 	http.Handle("/api/connections", http.HandlerFunc(apiServer.ServeConnections))
 	http.Handle("/api/processes", http.HandlerFunc(apiServer.ServeProcesses))
+	http.Handle("/api/infobases", http.HandlerFunc(apiServer.ServeInfobases))
 
 	httpServer := &http.Server{
 		Addr:         fmt.Sprintf(":%s", os.Getenv("metr1c_port")),

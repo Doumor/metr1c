@@ -33,6 +33,7 @@ type Server struct {
 	sessions    []map[string]string
 	connections []map[string]string
 	processes   []map[string]string
+	infobases   []map[string]string
 }
 
 func NewServer() *Server {
@@ -93,4 +94,19 @@ func (s *Server) UpdateProcesses(update []map[string]string) {
 	defer s.mutex.Unlock()
 
 	s.processes = update
+}
+
+// Infobases
+func (s *Server) ServeInfobases(w http.ResponseWriter, _ *http.Request) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	requestHandler(w, s.infobases)
+}
+
+func (s *Server) UpdateInfobases(update []map[string]string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.infobases = update
 }
