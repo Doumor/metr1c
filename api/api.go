@@ -97,14 +97,14 @@ func (s *Server) UpdateProcesses(update []map[string]string) {
 }
 
 // Infobases
-func (s *APIServer) ServeInfobases(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeInfobases(w http.ResponseWriter, r *http.Request) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	requestHandler(w, s.infobases)
 }
 
-func (s *APIServer) UpdateInfobases(update []map[string]string) {
+func (s *Server) UpdateInfobases(update []map[string]string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 

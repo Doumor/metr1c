@@ -285,11 +285,11 @@ func main() {
 	recordMetrics(apiServer)
 
 	http.Handle("/metrics", promhttp.Handler())
-	http.Handle("/api/summary", http.HandlerFunc(server.ServeSummary))
-	http.Handle("/api/sessions", http.HandlerFunc(server.ServeSessions))
-	http.Handle("/api/connections", http.HandlerFunc(server.ServeConnections))
-	http.Handle("/api/processes", http.HandlerFunc(server.ServeProcesses))
-	http.Handle("/api/infobases", http.HandlerFunc(server.ServeInfobases))
+	http.Handle("/api/summary", http.HandlerFunc(apiServer.ServeSummary))
+	http.Handle("/api/sessions", http.HandlerFunc(apiServer.ServeSessions))
+	http.Handle("/api/connections", http.HandlerFunc(apiServer.ServeConnections))
+	http.Handle("/api/processes", http.HandlerFunc(apiServer.ServeProcesses))
+	http.Handle("/api/infobases", http.HandlerFunc(apiServer.ServeInfobases))
 
 	httpServer := &http.Server{
 		Addr:         fmt.Sprintf(":%s", os.Getenv("metr1c_port")),
