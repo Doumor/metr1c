@@ -2,10 +2,10 @@ TAG=$(shell git describe --abbrev=0 2> /dev/null || echo "0.0.1")
 HASH=$(shell git rev-parse --verify --short HEAD)
 VERSION="${TAG}-${HASH}"
 
-build_dev :
+build :
 	@printf "building version %s, stripped\n" "${VERSION}"
 	@printf "building version %s, stripped\n" "${VERSION}"
-        @CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -v \
+	@CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -v \
         -ldflags "-X main.Version=${VERSION} -w" .
 
 metr1c :
