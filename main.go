@@ -99,25 +99,27 @@ func countTotalProcMem(processes rac.RACQuery) (float64, error) {
 }
 
 func createInfobaseNameMap(infobases rac.RACQuery) map[string]string {
-	infoName := make(map[string]string)
-	for _, infobase := range infobases.Records {
-		infoName[infobase["infobase"]] = infobase["name"]
+	baseUUIDToName := make(map[string]string)
+	for _, record := range infobases.Records {
+		baseUUIDToName[record["infobase"]] = record["name"]
 	}
 
-	return infoName
+	return baseUUIDToName
 }
 
-func countInfobaseByLicenses(licenses rac.RACQuery) map[string]float64 {
-	mapLicenseBase := make(map[string][]string)
-	for _, license := range licenses.Records {
-		mapLicenseBase[license["infobase"]] = append(mapLicenseBase[license["infobase"]], license["session"])
+func countSessionsByInfobase(sessions rac.RACQuery) map[string]float64 {
+	mapSessionUUIDToBase := make(map[string][]string)
+	for _, record := range sessions.Records {
+		if record["hibernate"] == "yes" {
+			continue
+		}
+		mapSessionUUIDToBase[record["infobase"]] = append(mapSessionUUIDToBase[record["infobase"]], record["session"])
 	}
-	countLicenseBase := make(map[string]float64)
-	for k, v := range mapLicenseBase {
-		countLicenseBase[k] = float64(len(v))
+	numSessionByBase := make(map[string]float64)
+	for baseUUID, sessionUUID := range mapSessionUUIDToBase {
+		numSessionByBase[baseUUID] = float64(len(sessionUUID))
 	}
-
-	return countLicenseBase
+	return numSessionByBase
 }
 
 func recordMetrics(server *api.APIServer) {
@@ -180,12 +182,12 @@ func recordMetrics(server *api.APIServer) {
 
 			// Infobases
 			infobases := getRecords(baseQuery, "infobase", "summary", "list")
-			sessCountBases := countInfobaseByLicenses(sessionsLicenses)
-			for k, v1 := range createInfobaseNameMap(infobases) {
-				if v2, ok := sessCountBases[k]; ok {
-					licensesPerInfobase.WithLabelValues(k, v1).Set(v2)
+			numLicensesByBase := countSessionsByInfobase(sessions)
+			for baseUUID, baseName := range createInfobaseNameMap(infobases) {
+				if numSessions, ok := numLicensesByBase[baseUUID]; ok {
+					sessionsPerInfobase.WithLabelValues(baseUUID, baseName).Set(numSessions)
 				} else {
-					licensesPerInfobase.WithLabelValues(k, v1).Set(0)
+					sessionsPerInfobase.WithLabelValues(baseUUID, baseName).Set(0)
 				}
 			}
 
@@ -252,11 +254,11 @@ var (
 		Help: "The total number of used memory by all processes (KB)",
 	})
 
-	licensesPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "platform1c_license_count_per_infobase",
-		Help: "The number of licenses for infobase"},
+	sessionsPerInfobase = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "platform1c_session_count_per_infobase",
+		Help: "The number of sessions assigned with infobase"},
 		// The two label names by which to split the metric.
-		[]string{"InfobaseUuid", "InfobaseName"})
+		[]string{"InfobaseUUID", "InfobaseName"})
 )
 
 func main() {
