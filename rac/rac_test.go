@@ -69,7 +69,7 @@ func TestExtractKeyValueNoKey(t *testing.T) {
 	}
 }
 
-func TestRACQueryParseSingleBlock(t *testing.T) {
+func TestQueryParseSingleBlock(t *testing.T) {
 	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
 	conn-id        : 1168
 	application    : "WebServerExtension"
@@ -86,7 +86,7 @@ func TestRACQueryParseSingleBlock(t *testing.T) {
 		},
 	}
 
-	query := RACQuery{
+	query := Query{
 		Output: input,
 	}
 	err := query.Parse()
@@ -100,7 +100,7 @@ func TestRACQueryParseSingleBlock(t *testing.T) {
 	}
 }
 
-func TestRACQueryParseMultipleBlocksOK(t *testing.T) {
+func TestQueryParseMultipleBlocksOK(t *testing.T) {
 	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
 	conn-id        : 1168
 	application    : "WebServerExtension"
@@ -130,7 +130,7 @@ func TestRACQueryParseMultipleBlocksOK(t *testing.T) {
 		},
 	}
 
-	query := RACQuery{
+	query := Query{
 		Output: input,
 	}
 	err := query.Parse()
@@ -144,7 +144,7 @@ func TestRACQueryParseMultipleBlocksOK(t *testing.T) {
 	}
 }
 
-func TestRACQueryParseExtraTrailingNLs(t *testing.T) {
+func TestQueryParseExtraTrailingNLs(t *testing.T) {
 	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
 	conn-id        : 1168
 	application    : "WebServerExtension"
@@ -163,7 +163,7 @@ func TestRACQueryParseExtraTrailingNLs(t *testing.T) {
 		},
 	}
 
-	query := RACQuery{
+	query := Query{
 		Output: input,
 	}
 	err := query.Parse()
@@ -177,7 +177,7 @@ func TestRACQueryParseExtraTrailingNLs(t *testing.T) {
 	}
 }
 
-func TestRACQueryParseExtraLeadingNLs(t *testing.T) {
+func TestQueryParseExtraLeadingNLs(t *testing.T) {
 	input := `
 	connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
 	conn-id        : 1168
@@ -195,7 +195,7 @@ func TestRACQueryParseExtraLeadingNLs(t *testing.T) {
 		},
 	}
 
-	query := RACQuery{
+	query := Query{
 		Output: input,
 	}
 	err := query.Parse()
@@ -209,7 +209,7 @@ func TestRACQueryParseExtraLeadingNLs(t *testing.T) {
 	}
 }
 
-func TestRACQueryCountMultipleBlocks(t *testing.T) {
+func TestQueryCountMultipleBlocks(t *testing.T) {
 	input := `connection     : 3f97c035-b8e6-4b25-a72c-887b51a72b67
 	conn-id        : 1168
 	application    : "WebServerExtension"
@@ -224,7 +224,7 @@ func TestRACQueryCountMultipleBlocks(t *testing.T) {
 
 	expected := 2
 
-	query := RACQuery{
+	query := Query{
 		Output: input,
 	}
 	err := query.Parse()
@@ -238,12 +238,12 @@ func TestRACQueryCountMultipleBlocks(t *testing.T) {
 	}
 }
 
-func TestRACQueryCountNoBlocks(t *testing.T) {
+func TestQueryCountNoBlocks(t *testing.T) {
 	input := ``
 
 	expected := 0
 
-	query := RACQuery{
+	query := Query{
 		Output: input,
 	}
 	err := query.Parse()
