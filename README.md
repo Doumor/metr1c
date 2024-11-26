@@ -46,6 +46,7 @@ chown root:root /etc/systemd/system/metr1c.service
 chmod 770 /etc/systemd/system/metr1c.service
 nano /etc/systemd/system/metr1c.service # Указать переменные
 
+systemctl enable metr1c
 systemctl start metr1c
 ```
 
@@ -58,6 +59,17 @@ make clean
 ## Как использовать?
 
 Информацию выдаёт на порт `:1599` по эндпоинту `/metric`. Имя службы: `metr1c.service`.
+
+Выдает метрики:
+1) sessionCount - отображает количество сеансов на сервере
+2) activeSessionCount - отображает количество активных сеансов
+3) hibernatedSessionCount - отображает количество спящих сеансов
+4) softLicensesCount - отображает количество soft лицензий
+5) haspLicensesCount - отображает количество HASP лицензий
+6) connectionCount - отображает количество соединений
+7) processCount - отображает количество процессов
+8) processMemTotal - отображает сколько памяти потребляется всеми процессами, в кб
+9) sessionsPerInfobase - отображает то, как каждая из существующих баз используется в данный момент, сколько активных сеансов к ней обращено
 
 ## Безопасность
 
